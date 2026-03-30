@@ -1,0 +1,113 @@
+.wall__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 32px;
+}
+.wall__login-hint {
+  padding: 12px 18px;
+  border-radius: var(--radius-lg);
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+.wall__login-hint .btn { display: inline-flex; align-items: center; gap: 6px; }
+
+.wall__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+/* Sticky Note */
+.sticky-note {
+  background: var(--note-color);
+  border-radius: 4px 4px 24px 4px;
+  padding: 20px 18px 16px;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  transform: rotate(var(--note-rotation));
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+  box-shadow: 4px 4px 12px rgba(0,0,0,0.3), 2px 2px 4px rgba(0,0,0,0.2);
+  cursor: default;
+}
+.sticky-note:hover {
+  transform: rotate(0deg) scale(1.04);
+  box-shadow: 8px 8px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,0,0,0.1);
+  z-index: 2;
+}
+/* Pin */
+.sticky-note::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 14px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.3);
+}
+
+.sticky-note__message {
+  font-size: 0.9rem;
+  color: rgba(0,0,0,0.8);
+  line-height: 1.6;
+  font-weight: 500;
+  flex: 1;
+  word-break: break-word;
+}
+
+.sticky-note__footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+  border-top: 1px solid rgba(0,0,0,0.1);
+  padding-top: 8px;
+}
+.sticky-note__author {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(0,0,0,0.6);
+  font-style: italic;
+}
+.sticky-note__date {
+  font-size: 0.72rem;
+  color: rgba(0,0,0,0.4);
+}
+
+.sticky-note__delete {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.15);
+  color: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  cursor: pointer;
+  border: none;
+  opacity: 0;
+  transition: all var(--transition-fast);
+}
+.sticky-note:hover .sticky-note__delete { opacity: 1; }
+.sticky-note__delete:hover {
+  background: rgba(232, 98, 124, 0.6);
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .wall__grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
+}
+@media (max-width: 400px) {
+  .wall__grid { grid-template-columns: 1fr 1fr; }
+}

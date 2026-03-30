@@ -1,0 +1,271 @@
+.landing {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  padding: 100px 24px 60px;
+}
+
+/* Orbs */
+.landing__orbs { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.18;
+}
+.orb-1 {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, var(--accent-violet), transparent 70%);
+  top: -100px; left: -100px;
+  animation: orb-float 12s ease-in-out infinite;
+}
+.orb-2 {
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, var(--accent-gold), transparent 70%);
+  top: 20%; right: -80px;
+  animation: orb-float 10s ease-in-out infinite reverse;
+  opacity: 0.14;
+}
+.orb-3 {
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, var(--accent-teal), transparent 70%);
+  bottom: 10%; left: 15%;
+  animation: orb-float 14s ease-in-out infinite 2s;
+  opacity: 0.12;
+}
+.orb-4 {
+  width: 350px; height: 350px;
+  background: radial-gradient(circle, var(--accent-rose), transparent 70%);
+  bottom: -80px; right: 10%;
+  animation: orb-float 11s ease-in-out infinite 4s;
+  opacity: 0.1;
+}
+
+/* Grid overlay */
+.landing__grid {
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--glass-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--glass-border) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+}
+
+/* Rings */
+.landing__rings {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 0;
+}
+.ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(212, 168, 67, 0.06);
+}
+.ring-1 { width: 600px; height: 600px; animation: spin 60s linear infinite; }
+.ring-2 { width: 900px; height: 900px; animation: spin 90s linear infinite reverse; }
+.ring-3 { width: 1200px; height: 1200px; animation: spin 120s linear infinite; }
+
+/* Content */
+.landing__content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  max-width: 760px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  animation: fadeInUp 0.8s ease;
+}
+
+/* Badge */
+.landing__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  background: rgba(212, 168, 67, 0.08);
+  border: 1px solid rgba(212, 168, 67, 0.2);
+  border-radius: var(--radius-full);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent-gold);
+  letter-spacing: 0.05em;
+}
+.badge-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent-gold);
+  animation: pulse-glow 2s ease-in-out infinite;
+  box-shadow: 0 0 8px var(--accent-gold);
+}
+
+/* Title */
+.landing__title {
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 7vw, 5.5rem);
+  font-weight: 900;
+  line-height: 1.1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.landing__title-line { display: block; color: var(--text-primary); }
+.landing__title-line--gold {
+  background: linear-gradient(135deg, var(--accent-gold), #F0C060, var(--accent-gold));
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 4s linear infinite;
+}
+.landing__title-line--dim { color: var(--text-secondary); }
+
+.landing__description {
+  font-size: clamp(1rem, 2vw, 1.15rem);
+  color: var(--text-secondary);
+  max-width: 560px;
+  line-height: 1.7;
+}
+
+/* Stats */
+.landing__stats {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 20px 36px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-2xl);
+  backdrop-filter: blur(12px);
+}
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--accent-gold), #E8C060);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+}
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.stat-divider {
+  width: 1px;
+  height: 40px;
+  background: var(--glass-border);
+}
+
+/* CTAs */
+.landing__ctas {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.landing__btn {
+  padding: 16px 36px;
+  font-size: 1rem;
+  border-radius: var(--radius-full);
+}
+
+/* Scroll hint */
+.landing__scroll-hint {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.scroll-line {
+  width: 40px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--glass-border));
+}
+.scroll-line:last-child {
+  background: linear-gradient(90deg, var(--glass-border), transparent);
+}
+
+/* Feature cards */
+.landing__features {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  max-width: 900px;
+  width: 100%;
+  margin-top: 40px;
+  animation: fadeInUp 0.8s ease 0.3s both;
+}
+.feature-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 20px;
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  text-align: center;
+}
+.feature-card:hover {
+  transform: translateY(-4px);
+}
+.feature-icon { font-size: 2rem; margin-bottom: 12px; }
+.feature-title {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+.feature-desc {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+@media (max-width: 768px) {
+  .landing__features {
+    grid-template-columns: repeat(2, 1fr);
+    margin-top: 32px;
+  }
+  .landing__stats {
+    padding: 16px 24px;
+    gap: 16px;
+  }
+  .stat-value { font-size: 1.5rem; }
+  .landing__ctas { flex-direction: column; align-items: center; }
+  .ring-2, .ring-3 { display: none; }
+}
+
+@media (max-width: 480px) {
+  .landing__features { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .feature-card { padding: 20px 14px; }
+}
