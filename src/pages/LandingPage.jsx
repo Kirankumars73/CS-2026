@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import LoginModal from '../components/LoginModal';
+import ShapeLandingHero from '../components/ui/shape-landing-hero';
 import './LandingPage.css';
 
 export default function LandingPage() {
@@ -11,23 +12,8 @@ export default function LandingPage() {
 
   return (
     <div className="landing">
-      {/* Background orbs */}
-      <div className="landing__orbs">
-        <div className="orb orb-1"></div>
-        <div className="orb orb-2"></div>
-        <div className="orb orb-3"></div>
-        <div className="orb orb-4"></div>
-      </div>
-
-      {/* Grid overlay */}
-      <div className="landing__grid"></div>
-
-      {/* Decorative rings */}
-      <div className="landing__rings">
-        <div className="ring ring-1"></div>
-        <div className="ring ring-2"></div>
-        <div className="ring ring-3"></div>
-      </div>
+      {/* Animated floating shapes background */}
+      <ShapeLandingHero />
 
       {/* Content */}
       <div className="landing__content">
