@@ -22,12 +22,15 @@ export default function EventCard({ event, index = 0, onGalleryClick }) {
   const meta = [event.category, dateStr].filter(Boolean).join('  •  ');
 
   const coverURL =
+    event.photoURLImageKit ||
     event.photoURL ||
     'https://images.unsplash.com/photo-1526510747491-58f928ec870f?fm=jpg&q=60';
 
   const hasGallery =
-    Array.isArray(event.additionalPhotoURLs) &&
-    event.additionalPhotoURLs.length > 0;
+    (Array.isArray(event.additionalPhotoURLsImageKit) &&
+      event.additionalPhotoURLsImageKit.length > 0) ||
+    (Array.isArray(event.additionalPhotoURLs) &&
+      event.additionalPhotoURLs.length > 0);
 
   return (
     <motion.div
@@ -108,7 +111,7 @@ export default function EventCard({ event, index = 0, onGalleryClick }) {
               whileTap={hasGallery ? { scale: 0.95 } : {}}
               title={
                 hasGallery
-                  ? `View ${event.additionalPhotoURLs.length} more photos`
+                  ? `View ${(event.additionalPhotoURLsImageKit || event.additionalPhotoURLs).length} more photos`
                   : 'No additional photos'
               }
               className={`

@@ -1,3 +1,7 @@
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../firebase';
+import { uploadToImageKit } from '../imagekit';
+
 /**
  * Compress an image file using canvas before uploading.
  * Returns a compressed Blob (JPEG).
@@ -48,4 +52,39 @@ export function compressImage(file, maxWidth = 800, maxHeight = 800, quality = 0
     reader.onerror = () => reject(new Error('Failed to read file'));
     reader.readAsDataURL(file);
   });
+}
+
+/**
+ * Upload image to both Firebase Storage and ImageKit
+ * @param {Blob} compressedBlob - Compressed image blob
+ * @param {string} firebasePath - Firebase storage path
+ * @param {string} imagekitPath - ImageKit folder path
+ * @param {string} fileName - File name
+ * @returns {Promise<{firebaseUrl: string, imagekitUrl: string}>}
+ */
+export async function uploadToBothServices(compressedBlob, firebasePath, imagekitPath, fileName) {
+  try {
+    // Upload to Firebase
+    const storageRef = ref(storage, firebasePath);
+    await uploadBytes(storageRef, compressedBlob);
+    const firebaseUrl = await getDownloadURL(storageRef);
+
+    // Upload to ImageKit
+    let imagekitUrl = '';
+    try {
+      const imagekitResult = await uploadToImageKit(compressedBlob, fileName, imagekitPath);
+      imagekitUrl = imagekitResult.url;
+    } catch (ikError) {
+      console.warn('ImageKit upload failed, continuing with Firebase only:', ikError);
+    }
+
+    return {
+      firebaseUrl,
+      imagekitUrl,
+      url: firebaseUrl // Default to Firebase URL for backwards compatibility
+    };
+  } catch (error) {
+    console.error('Upload error:', error);
+    throw error;
+  }
 }

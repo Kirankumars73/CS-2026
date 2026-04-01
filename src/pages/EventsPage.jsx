@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { HiX, HiOutlinePhotograph, HiOutlinePlus } from 'react-icons/hi';
-import { db, storage } from '../firebase';
+import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { compressImage, uploadToBothServices } from '../utils/imageUtils';
 import EventCard from '../components/ui/event-card';
 import './EventsPage.css';
 
@@ -85,19 +85,46 @@ export default function EventsPage() {
     setError('');
     try {
       let photoURL = '';
+      let photoURLImageKit = '';
+      
       if (form.photo) {
-        const storageRef = ref(storage, `classes/${CLASS_ID}/events/${Date.now()}_${form.photo.name}`);
-        await uploadBytes(storageRef, form.photo);
-        photoURL = await getDownloadURL(storageRef);
+        const compressed = await compressImage(form.photo, 1200, 1200, 0.7);
+        const fileName = `${Date.now()}_${form.photo.name}`;
+        const firebasePath = `classes/${CLASS_ID}/events/${fileName}`;
+        const imagekitPath = `classes/${CLASS_ID}/events`;
+        
+        const { firebaseUrl, imagekitUrl } = await uploadToBothServices(
+          compressed,
+          firebasePath,
+          imagekitPath,
+          fileName
+        );
+        
+        photoURL = firebaseUrl;
+        photoURLImageKit = imagekitUrl || '';
       }
       
       const additionalPhotoURLs = [];
+      const additionalPhotoURLsImageKit = [];
+      
       if (form.additionalPhotos && form.additionalPhotos.length > 0) {
         for (const file of form.additionalPhotos) {
-          const storageRef = ref(storage, `classes/${CLASS_ID}/events/extra_${Date.now()}_${file.name}`);
-          await uploadBytes(storageRef, file);
-          const url = await getDownloadURL(storageRef);
-          additionalPhotoURLs.push(url);
+          const compressed = await compressImage(file, 1200, 1200, 0.7);
+          const fileName = `extra_${Date.now()}_${file.name}`;
+          const firebasePath = `classes/${CLASS_ID}/events/${fileName}`;
+          const imagekitPath = `classes/${CLASS_ID}/events`;
+          
+          const { firebaseUrl, imagekitUrl } = await uploadToBothServices(
+            compressed,
+            firebasePath,
+            imagekitPath,
+            fileName
+          );
+          
+          additionalPhotoURLs.push(firebaseUrl);
+          if (imagekitUrl) {
+            additionalPhotoURLsImageKit.push(imagekitUrl);
+          }
         }
       }
 
@@ -107,7 +134,9 @@ export default function EventsPage() {
         date: form.date,
         category: form.category,
         photoURL,
+        photoURLImageKit,
         additionalPhotoURLs,
+        additionalPhotoURLsImageKit,
         postedBy: memberProfile?.name || currentUser?.displayName || 'Anonymous',
         postedById: currentUser.uid,
         createdAt: serverTimestamp(),
@@ -272,12 +301,14 @@ export default function EventsPage() {
           <div className="w-full max-w-6xl my-auto flex flex-col items-center animate-fadeIn">
             <div className="text-center mb-10 w-full">
               <h2 className="text-3xl font-light text-white tracking-tight">{viewingEvent.title}</h2>
-              <p className="text-zinc-500 tracking-widest uppercase text-sm mt-3">{viewingEvent.additionalPhotoURLs?.length} Gallery Photos</p>
+              <p className="text-zinc-500 tracking-widest uppercase text-sm mt-3">
+                {(viewingEvent.additionalPhotoURLsImageKit || viewingEvent.additionalPhotoURLs)?.length} Gallery Photos
+              </p>
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-              {/* Also show the cover photo in the gallery if desired, but we'll stick to additional as per prompt's "more photos" logic */}
-              {viewingEvent.additionalPhotoURLs?.map((url, i) => (
+              {/* Use ImageKit URLs if available, otherwise fall back to Firebase URLs */}
+              {(viewingEvent.additionalPhotoURLsImageKit || viewingEvent.additionalPhotoURLs)?.map((url, i) => (
                 <div key={i} className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl bg-zinc-900 border border-white/5 relative group">
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent z-10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   <img src={url} alt={`Gallery ${i+1}`} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />

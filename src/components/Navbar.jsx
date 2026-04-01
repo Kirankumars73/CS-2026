@@ -33,7 +33,7 @@ export default function Navbar() {
     { to: '/dm',       label: 'DMs'      },
   ];
 
-  const avatar = memberProfile?.profilePhoto || currentUser?.photoURL;
+  const avatar = memberProfile?.profilePhotoImageKit || memberProfile?.profilePhoto || currentUser?.photoURL;
   const initials = (memberProfile?.name || currentUser?.displayName || 'U')
     .split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 

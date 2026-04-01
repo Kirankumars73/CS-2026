@@ -59,8 +59,8 @@ export default function ProfilePage() {
         <div className="profile__cover">
           <div className="profile__cover-bg"></div>
           <div className="profile__avatar-wrap">
-            {profile.profilePhoto ? (
-              <img src={profile.profilePhoto} alt={profile.name} className="profile__avatar" />
+            {(profile.profilePhotoImageKit || profile.profilePhoto) ? (
+              <img src={profile.profilePhotoImageKit || profile.profilePhoto} alt={profile.name} className="profile__avatar" />
             ) : (
               <div className="profile__avatar avatar-placeholder">
                 {getInitials(profile.name)}

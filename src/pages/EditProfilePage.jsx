@@ -1,11 +1,10 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { HiOutlineCamera, HiOutlineSave, HiOutlineArrowLeft } from 'react-icons/hi';
-import { db, storage } from '../firebase';
+import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { compressImage } from '../utils/imageUtils';
+import { compressImage, uploadToBothServices } from '../utils/imageUtils';
 import './EditProfilePage.css';
 
 const ROLL_NUMBERS = Array.from({ length: 67 }, (_, i) => i + 1);
@@ -53,6 +52,8 @@ export default function EditProfilePage() {
     setSuccess('');
     try {
       let profilePhoto = memberProfile?.profilePhoto || currentUser?.photoURL || '';
+      let profilePhotoImageKit = memberProfile?.profilePhotoImageKit || '';
+      
       if (newPhoto) {
         // Compress the image before uploading
         setCompressing(true);
@@ -60,11 +61,23 @@ export default function EditProfilePage() {
         setCompressing(false);
 
         setUploadingPhoto(true);
-        const stRef = ref(storage, `classes/${CLASS_ID}/profiles/${currentUser.uid}`);
-        await uploadBytes(stRef, compressed);
-        profilePhoto = await getDownloadURL(stRef);
+        const fileName = `${currentUser.uid}_profile`;
+        const firebasePath = `classes/${CLASS_ID}/profiles/${currentUser.uid}`;
+        const imagekitPath = `classes/${CLASS_ID}/profiles`;
+        
+        // Upload to both services
+        const { firebaseUrl, imagekitUrl } = await uploadToBothServices(
+          compressed,
+          firebasePath,
+          imagekitPath,
+          fileName
+        );
+        
+        profilePhoto = firebaseUrl;
+        profilePhotoImageKit = imagekitUrl || '';
         setUploadingPhoto(false);
       }
+      
       const ref2 = doc(db, 'classes', CLASS_ID, 'members', currentUser.uid);
       await setDoc(ref2, {
         name: form.name.trim(),
@@ -72,6 +85,7 @@ export default function EditProfilePage() {
         bio: form.bio.trim(),
         quote: form.quote.trim(),
         profilePhoto,
+        profilePhotoImageKit,
         email: currentUser.email,
         uid: currentUser.uid,
         updatedAt: serverTimestamp(),

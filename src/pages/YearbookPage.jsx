@@ -91,8 +91,8 @@ export default function YearbookPage() {
               )}
               {/* Photo */}
               <div className="member-card__photo-wrap">
-                {member.profilePhoto ? (
-                  <img src={member.profilePhoto} alt={member.name} className="member-card__photo" />
+                {(member.profilePhotoImageKit || member.profilePhoto) ? (
+                  <img src={member.profilePhotoImageKit || member.profilePhoto} alt={member.name} className="member-card__photo" />
                 ) : (
                   <div className="member-card__photo avatar-placeholder">
                     {getInitials(member.name)}

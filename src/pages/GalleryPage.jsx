@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { HiOutlineUpload, HiX, HiOutlineZoomIn, HiChevronLeft, HiChevronRight } from 'react-icons/hi';
-import { db, storage } from '../firebase';
+import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { compressImage } from '../utils/imageUtils';
+import { compressImage, uploadToBothServices } from '../utils/imageUtils';
 import './GalleryPage.css';
 
 const CATEGORIES = ['All', 'Classroom', 'Trip', 'Festival', 'Sports', 'Cultural', 'Farewell', 'Other'];
@@ -54,11 +53,21 @@ export default function GalleryPage() {
     try {
       // Compress image before upload
       const compressed = await compressImage(uploadFile, 1200, 1200, 0.7);
-      const storageRef = ref(storage, `classes/${CLASS_ID}/gallery/${Date.now()}_${uploadFile.name}`);
-      await uploadBytes(storageRef, compressed);
-      const url = await getDownloadURL(storageRef);
+      const fileName = `${Date.now()}_${uploadFile.name}`;
+      const firebasePath = `classes/${CLASS_ID}/gallery/${fileName}`;
+      const imagekitPath = `classes/${CLASS_ID}/gallery`;
+      
+      // Upload to both Firebase and ImageKit
+      const { firebaseUrl, imagekitUrl } = await uploadToBothServices(
+        compressed, 
+        firebasePath, 
+        imagekitPath, 
+        fileName
+      );
+      
       await addDoc(collection(db, 'classes', CLASS_ID, 'gallery'), {
-        url,
+        url: firebaseUrl,
+        imagekitUrl: imagekitUrl || '',
         caption: uploadCaption.trim(),
         category: uploadCategory,
         uploadedBy: memberProfile?.name || currentUser?.displayName || 'Anonymous',
@@ -122,7 +131,12 @@ export default function GalleryPage() {
         <div className="gallery__grid stagger-children">
           {filtered.map(photo => (
             <div key={photo.id} className="gallery-item clay-card" onClick={() => setLightbox(photo)}>
-              <img src={photo.url} alt={photo.caption} className="gallery-item__img" loading="lazy" />
+              <img 
+                src={photo.imagekitUrl || photo.url} 
+                alt={photo.caption} 
+                className="gallery-item__img" 
+                loading="lazy" 
+              />
               <div className="gallery-item__overlay">
                 <HiOutlineZoomIn className="gallery-item__zoom" />
                 {photo.caption && <p className="gallery-item__caption">{photo.caption}</p>}
@@ -197,7 +211,7 @@ export default function GalleryPage() {
             <HiChevronLeft />
           </button>
           <div className="lightbox__content" onClick={e => e.stopPropagation()}>
-            <img src={lightbox.url} alt={lightbox.caption} className="lightbox__img" />
+            <img src={lightbox.imagekitUrl || lightbox.url} alt={lightbox.caption} className="lightbox__img" />
             {lightbox.caption && <p className="lightbox__caption">{lightbox.caption}</p>}
             <div className="lightbox__meta">
               <span className="badge badge-gold">{lightbox.category}</span>
