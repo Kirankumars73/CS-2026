@@ -114,14 +114,12 @@ export default function EventsPage() {
           const firebasePath = `classes/${CLASS_ID}/events/${fileName}`;
           const imagekitPath = `classes/${CLASS_ID}/events`;
           
-          const { firebaseUrl, imagekitUrl } = await uploadToBothServices(
+          const { imagekitUrl } = await uploadToBothServices(
             compressed,
-            firebasePath,
             imagekitPath,
             fileName
           );
           
-          additionalPhotoURLs.push(firebaseUrl);
           if (imagekitUrl) {
             additionalPhotoURLsImageKit.push(imagekitUrl);
           }
