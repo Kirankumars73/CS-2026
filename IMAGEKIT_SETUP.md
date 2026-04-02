@@ -25,15 +25,22 @@ VITE_IMAGEKIT_PRIVATE_KEY=private_your_key_here
 ### 3. How It Works
 
 #### Upload Flow
-When users upload images (Gallery, Profile Photos, Events):
 
-1. **Image Compression**: Images are compressed using canvas before upload
-2. **Dual Upload**: Compressed images are uploaded to BOTH:
-   - Firebase Storage (primary, for backwards compatibility)
-   - ImageKit (for optimized delivery and transformations)
-3. **Database Storage**: Both URLs are stored in Firestore:
-   - `url` or `photoURL` - Firebase URL
-   - `imagekitUrl` or `photoURLImageKit` - ImageKit URL
+**Gallery Page (ImageKit Only):**
+- When users upload photos to the Gallery:
+  1. **Image Compression**: Images are compressed using canvas before upload
+  2. **ImageKit Upload**: Compressed images are uploaded ONLY to ImageKit
+  3. **Database Storage**: ImageKit URL is stored in both fields:
+     - `imagekitUrl` - Primary ImageKit URL
+     - `url` - Also stores ImageKit URL for backwards compatibility
+
+**Other Pages (Profile Photos, Events - Dual Upload):**
+- When users upload profile photos or event photos:
+  1. **Image Compression**: Images are compressed using canvas before upload
+  2. **Dual Upload**: Compressed images are uploaded to BOTH:
+     - Firebase Storage (for redundancy)
+     - ImageKit (for optimized delivery)
+  3. **Database Storage**: Both URLs are stored in Firestore
 
 #### Fetch/Display Flow
 When displaying images:
@@ -52,9 +59,9 @@ When displaying images:
 
 #### Upload Logic
 - `src/utils/imageUtils.js` - Added `uploadToBothServices()` function
-- `src/pages/GalleryPage.jsx` - Updated image upload and display
-- `src/pages/EditProfilePage.jsx` - Updated profile photo upload
-- `src/pages/EventsPage.jsx` - Updated event cover & gallery photo uploads
+- `src/pages/GalleryPage.jsx` - **ImageKit ONLY** upload for gallery photos
+- `src/pages/EditProfilePage.jsx` - Dual upload (Firebase + ImageKit) for profile photos
+- `src/pages/EventsPage.jsx` - Dual upload for event cover & gallery photos
 
 #### Display Logic
 - `src/pages/YearbookPage.jsx` - Display ImageKit profile photos
@@ -68,13 +75,20 @@ When displaying images:
 
 ## Database Schema Updates
 
-### Gallery Photos
+### Gallery Photos (ImageKit Only)
 ```javascript
 {
-  url: "firebase_storage_url",          // Existing field
-  imagekitUrl: "imagekit_url",          // New field
+  imagekitUrl: "imagekit_url",              // Primary ImageKit URL
+  url: "imagekit_url",                      // Same as imagekitUrl (for compatibility)
   caption: "...",
   category: "...",
+  // ... other fields
+}
+
+// Old photos (Firebase only) - still work:
+{
+  url: "firebase_storage_url",              // Legacy field
+  caption: "...",
   // ... other fields
 }
 ```
@@ -106,7 +120,8 @@ When displaying images:
 2. **Transformations**: Can apply on-the-fly transformations (resize, crop, quality)
 3. **Bandwidth Savings**: Optimized images reduce bandwidth usage
 4. **Backwards Compatible**: Existing Firebase images continue to work
-5. **Redundancy**: Images stored in two places for reliability
+5. **Gallery Optimization**: Gallery page uses ImageKit exclusively for new uploads (faster, more efficient)
+6. **Redundancy**: Profile and event photos stored in two places for reliability
 
 ## Troubleshooting
 

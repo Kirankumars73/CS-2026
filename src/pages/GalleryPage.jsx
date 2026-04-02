@@ -3,7 +3,8 @@ import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, serverT
 import { HiOutlineUpload, HiX, HiOutlineZoomIn, HiChevronLeft, HiChevronRight } from 'react-icons/hi';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { compressImage, uploadToBothServices } from '../utils/imageUtils';
+import { compressImage } from '../utils/imageUtils';
+import { uploadToImageKit } from '../imagekit';
 import './GalleryPage.css';
 
 const CATEGORIES = ['All', 'Classroom', 'Trip', 'Festival', 'Sports', 'Cultural', 'Farewell', 'Other'];
@@ -54,20 +55,18 @@ export default function GalleryPage() {
       // Compress image before upload
       const compressed = await compressImage(uploadFile, 1200, 1200, 0.7);
       const fileName = `${Date.now()}_${uploadFile.name}`;
-      const firebasePath = `classes/${CLASS_ID}/gallery/${fileName}`;
       const imagekitPath = `classes/${CLASS_ID}/gallery`;
       
-      // Upload to both Firebase and ImageKit
-      const { firebaseUrl, imagekitUrl } = await uploadToBothServices(
+      // Upload to ImageKit only
+      const { url: imagekitUrl } = await uploadToImageKit(
         compressed, 
-        firebasePath, 
-        imagekitPath, 
-        fileName
+        fileName,
+        imagekitPath
       );
       
       await addDoc(collection(db, 'classes', CLASS_ID, 'gallery'), {
-        url: firebaseUrl,
-        imagekitUrl: imagekitUrl || '',
+        imagekitUrl: imagekitUrl,
+        url: imagekitUrl, // Store as url for backwards compatibility
         caption: uploadCaption.trim(),
         category: uploadCategory,
         uploadedBy: memberProfile?.name || currentUser?.displayName || 'Anonymous',
@@ -80,6 +79,7 @@ export default function GalleryPage() {
       setUploadCaption('');
     } catch (err) {
       setError('Upload failed. Please try again.');
+      console.error('ImageKit upload error:', err);
     } finally {
       setUploading(false);
     }
