@@ -130,3 +130,56 @@
 @media (max-width: 480px) {
   .admin__stats { grid-template-columns: repeat(2, 1fr); gap: 10px; }
 }
+
+/* ── Migration zone ── */
+.admin__migration {
+  margin-top: 32px;
+  padding: 18px 22px;
+  border-radius: var(--radius-lg) !important;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  border-color: rgba(139, 92, 246, 0.15) !important;
+}
+
+.admin__migration-text {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin__migration-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.admin__migration-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.admin__migration-result {
+  width: 100%;
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+}
+
+.admin__migration-result.ok {
+  background: rgba(20, 184, 166, 0.1);
+  color: var(--accent-teal);
+  border: 1px solid rgba(20, 184, 166, 0.2);
+}
+
+.admin__migration-result.err {
+  background: rgba(232, 98, 124, 0.1);
+  color: var(--accent-rose);
+  border: 1px solid rgba(232, 98, 124, 0.2);
+}
+

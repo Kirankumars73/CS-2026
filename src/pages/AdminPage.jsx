@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, deleteDoc, doc, getDocs, getDoc, writeBatch } from 'firebase/firestore';
 import { HiOutlineLightningBolt, HiX, HiOutlineUsers, HiOutlinePhotograph, HiOutlineClipboard, HiOutlineCalendar } from 'react-icons/hi';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -18,6 +18,8 @@ export default function AdminPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState('members');
   const [data, setData] = useState({ members: [], gallery: [], wall: [], events: [] });
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillResult, setBackfillResult] = useState(null);
 
   useEffect(() => {
     if (!isAdmin) { navigate('/yearbook'); return; }
@@ -47,6 +49,82 @@ export default function AdminPage() {
   const handleDelete = async (col, id) => {
     if (!window.confirm(`Delete this ${col.slice(0, -1)}? This action is permanent.`)) return;
     await deleteDoc(doc(db, 'classes', CLASS_ID, col, id));
+  };
+
+  // ── One-time migration: patch all yearbook_messages with yearbook profile data ──
+  const handleBackfillSenderNames = async () => {
+    if (!window.confirm(
+      'This will update ALL existing yearbook messages to use yearbook names & photos.\nContinue?'
+    )) return;
+
+    setBackfilling(true);
+    setBackfillResult(null);
+
+    try {
+      // 1. Fetch all messages
+      const msgSnap = await getDocs(collection(db, 'yearbook_messages'));
+      const messages = msgSnap.docs.map(d => ({ ref: d.ref, ...d.data() }));
+
+      // 2. Gather unique senderIds
+      const senderIds = [...new Set(messages.map(m => m.senderId).filter(Boolean))];
+
+      // 3. Fetch each sender's member profile
+      const profileMap = {};
+      await Promise.all(
+        senderIds.map(async (uid) => {
+          const snap = await getDoc(doc(db, 'classes', CLASS_ID, 'members', uid));
+          if (snap.exists()) profileMap[uid] = snap.data();
+        })
+      );
+
+      // 4. Build batched updates (Firestore allows max 500 per batch)
+      let updated = 0;
+      let skipped = 0;
+      const BATCH_SIZE = 400;
+      let batch = writeBatch(db);
+      let batchCount = 0;
+
+      for (const msg of messages) {
+        const profile = profileMap[msg.senderId];
+        if (!profile) { skipped++; continue; }
+
+        const yearbookName = profile.name || msg.senderName;
+        const yearbookPhoto =
+          profile.profilePhotoImageKit ||
+          profile.profilePhoto ||
+          msg.senderPhotoURL;
+
+        // Only write if something changed
+        if (yearbookName === msg.senderName && yearbookPhoto === msg.senderPhotoURL) {
+          skipped++;
+          continue;
+        }
+
+        batch.update(msg.ref, {
+          senderName: yearbookName,
+          senderPhotoURL: yearbookPhoto,
+        });
+        updated++;
+        batchCount++;
+
+        // Commit and start a new batch if we hit the limit
+        if (batchCount >= BATCH_SIZE) {
+          await batch.commit();
+          batch = writeBatch(db);
+          batchCount = 0;
+        }
+      }
+
+      // Commit any remaining
+      if (batchCount > 0) await batch.commit();
+
+      setBackfillResult({ ok: true, updated, skipped, total: messages.length });
+    } catch (err) {
+      console.error('Backfill error:', err);
+      setBackfillResult({ ok: false, error: err.message });
+    } finally {
+      setBackfilling(false);
+    }
   };
 
   const currentData = data[tab];
@@ -173,6 +251,35 @@ export default function AdminPage() {
                 </button>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Migration zone ── */}
+      <div className="admin__migration glass-card">
+        <div className="admin__migration-text">
+          <span className="admin__migration-title">🔧 Fix Yearbook Message Senders</span>
+          <span className="admin__migration-desc">
+            Updates all existing messages to show the sender's yearbook name &amp; photo
+            instead of their Google account info. Safe to run multiple times.
+          </span>
+        </div>
+        <button
+          className="btn btn-glass btn-sm"
+          onClick={handleBackfillSenderNames}
+          disabled={backfilling}
+          style={{ flexShrink: 0 }}
+        >
+          {backfilling ? (
+            <><span className="spinner" style={{ width: 14, height: 14 }} /> Running…</>
+          ) : '▶ Run Fix'}
+        </button>
+        {backfillResult && (
+          <div className={`admin__migration-result ${backfillResult.ok ? 'ok' : 'err'}`}>
+            {backfillResult.ok
+              ? `✅ Done — ${backfillResult.updated} updated, ${backfillResult.skipped} already correct (${backfillResult.total} total)`
+              : `❌ Error: ${backfillResult.error}`
+            }
           </div>
         )}
       </div>
