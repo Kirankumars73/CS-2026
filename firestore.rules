@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Class members (existing) ───────────────────────────────────
+    match /classes/{classId}/members/{memberId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == memberId;
+    }
+
+    // ─── Yearbook Messages ──────────────────────────────────────────
+    // Collection: yearbook_messages
+    // Fields: senderId, senderName, senderPhotoURL, receiverId, text, createdAt
+    match /yearbook_messages/{msgId} {
+
+      // Only the sender or receiver can read the message
+      allow read: if request.auth != null &&
+        (request.auth.uid == resource.data.senderId ||
+         request.auth.uid == resource.data.receiverId);
+
+      // Create: logged in, sender === currentUser, not to self,
+      //         and no previous message from same sender to same receiver
+      allow create: if request.auth != null &&
+        request.auth.uid == request.resource.data.senderId &&
+        request.resource.data.senderId != request.resource.data.receiverId &&
+        // Enforce 1 message per sender-receiver pair via app logic
+        // (Firestore doesn't support aggregation in rules; handle in app)
+        request.resource.data.text is string &&
+        request.resource.data.text.size() > 0 &&
+        request.resource.data.text.size() <= 500;
+
+      // No updates or deletes allowed
+      allow update, delete: if false;
+    }
+
+    // ─── Everything else ────────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

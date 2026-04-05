@@ -1,11 +1,6 @@
-import ImageKit from 'imagekit-javascript';
-
-// Initialize ImageKit
-const imagekit = new ImageKit({
-  publicKey: import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY || "public_your_key_here",
-  urlEndpoint: import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT || "https://ik.imagekit.io/8ewg8di9l",
-  authenticationEndpoint: import.meta.env.VITE_IMAGEKIT_AUTH_ENDPOINT || ""
-});
+// ImageKit upload uses direct fetch — SDK not needed
+// Keeping stub so named export `imagekit` doesn't break imports
+const imagekit = null;
 
 export const IMAGEKIT_URL_ENDPOINT = import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT || "https://ik.imagekit.io/8ewg8di9l";
 

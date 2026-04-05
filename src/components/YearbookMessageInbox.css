@@ -1,0 +1,195 @@
+/* ─────────────────────────────────────
+   Yearbook Message Inbox
+───────────────────────────────────── */
+.ymb-inbox {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ymb-inbox-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.ymb-inbox-label {
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+}
+
+.ymb-inbox-count {
+  background: rgba(212, 168, 67, 0.15);
+  color: var(--accent-gold);
+  border: 1px solid rgba(212, 168, 67, 0.25);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: var(--radius-full);
+}
+
+.ymb-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ─── Card ─── */
+.ymb-card {
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  overflow: hidden;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.ymb-card--open {
+  border-color: rgba(212, 168, 67, 0.22);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 8px 28px rgba(0, 0, 0, 0.45),
+    0 0 30px rgba(212, 168, 67, 0.06);
+}
+
+/* ─── Sender Row ─── */
+.ymb-sender-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition-fast);
+}
+
+.ymb-sender-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Avatar */
+.ymb-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.ymb-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(212, 168, 67, 0.25);
+  display: block;
+}
+
+.ymb-avatar--placeholder {
+  background: linear-gradient(135deg, var(--accent-violet), var(--accent-blue));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: white;
+  font-family: var(--font-display);
+}
+
+.ymb-avatar-glow {
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 0 0 0 rgba(212, 168, 67, 0);
+  transition: box-shadow var(--transition-base);
+}
+
+.ymb-card--open .ymb-avatar-glow {
+  box-shadow: 0 0 12px 2px rgba(212, 168, 67, 0.25);
+}
+
+/* Sender info */
+.ymb-sender-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ymb-sender-name {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ymb-sender-date {
+  display: block;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+/* Arrow icon */
+.ymb-arrow {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+  font-size: 1rem;
+  transition: transform var(--transition-base), color var(--transition-base), background var(--transition-base), border-color var(--transition-base);
+}
+
+.ymb-card--open .ymb-arrow {
+  transform: rotate(90deg);
+  color: var(--accent-gold);
+  background: rgba(212, 168, 67, 0.1);
+  border-color: rgba(212, 168, 67, 0.2);
+}
+
+/* ─── Message Content ─── */
+.ymb-message-wrap {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ymb-message-wrap--visible {
+  max-height: 400px;
+}
+
+.ymb-message-inner {
+  padding: 0 14px 16px;
+}
+
+.ymb-message-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 168, 67, 0.12), transparent);
+  margin-bottom: 14px;
+}
+
+.ymb-message-text {
+  font-size: 0.92rem;
+  line-height: 1.75;
+  color: var(--text-secondary);
+  font-style: italic;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
