@@ -15,7 +15,7 @@ const CLASS_ID = import.meta.env.VITE_CLASS_ID || 'cs2026';
 
 export default function ProfilePage() {
   const { userId } = useParams();
-  const { currentUser } = useAuth();
+  const { currentUser, memberProfile } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -78,10 +78,18 @@ export default function ProfilePage() {
     if (!currentUser || !text.trim()) return;
     setSending(true);
     try {
+      // Use the sender's yearbook profile fields — not the Google account defaults
+      const yearbookName = memberProfile?.name || currentUser.displayName || 'Anonymous';
+      const yearbookPhoto =
+        memberProfile?.profilePhotoImageKit ||
+        memberProfile?.profilePhoto ||
+        currentUser.photoURL ||
+        '';
+
       await addDoc(collection(db, 'yearbook_messages'), {
         senderId: currentUser.uid,
-        senderName: currentUser.displayName || 'Anonymous',
-        senderPhotoURL: currentUser.photoURL || '',
+        senderName: yearbookName,
+        senderPhotoURL: yearbookPhoto,
         receiverId: userId,
         text: text.trim(),
         createdAt: serverTimestamp(),
