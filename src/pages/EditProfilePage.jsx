@@ -4,7 +4,7 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { HiOutlineCamera, HiOutlineSave, HiOutlineArrowLeft } from 'react-icons/hi';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { compressImage, uploadToBothServices } from '../utils/imageUtils';
+import { compressImage, uploadToImageKitOnly } from '../utils/imageUtils';
 import './EditProfilePage.css';
 
 const ROLL_NUMBERS = Array.from({ length: 67 }, (_, i) => i + 1);
@@ -51,30 +51,20 @@ export default function EditProfilePage() {
     setError('');
     setSuccess('');
     try {
-      let profilePhoto = memberProfile?.profilePhoto || currentUser?.photoURL || '';
-      let profilePhotoImageKit = memberProfile?.profilePhotoImageKit || '';
-      
+      // Use ImageKit URL as the single source of truth for profile photos
+      let profilePhoto = memberProfile?.profilePhotoImageKit || memberProfile?.profilePhoto || currentUser?.photoURL || '';
+
       if (newPhoto) {
-        // Compress the image before uploading
         setCompressing(true);
         const compressed = await compressImage(newPhoto, 800, 800, 0.7);
         setCompressing(false);
 
         setUploadingPhoto(true);
         const fileName = `${currentUser.uid}_profile`;
-        const firebasePath = `classes/${CLASS_ID}/profiles/${currentUser.uid}`;
         const imagekitPath = `classes/${CLASS_ID}/profiles`;
-        
-        // Upload to both services
-        const { firebaseUrl, imagekitUrl } = await uploadToBothServices(
-          compressed,
-          firebasePath,
-          imagekitPath,
-          fileName
-        );
-        
-        profilePhoto = firebaseUrl;
-        profilePhotoImageKit = imagekitUrl || '';
+
+        const { url } = await uploadToImageKitOnly(compressed, imagekitPath, fileName);
+        profilePhoto = url;
         setUploadingPhoto(false);
       }
       
@@ -84,8 +74,8 @@ export default function EditProfilePage() {
         rollNumber: form.rollNumber.toString(),
         bio: form.bio.trim(),
         quote: form.quote.trim(),
-        profilePhoto,
-        profilePhotoImageKit,
+        profilePhoto,           // ImageKit URL (single source of truth)
+        profilePhotoImageKit: profilePhoto, // keep in sync for any older reads
         email: currentUser.email,
         uid: currentUser.uid,
         updatedAt: serverTimestamp(),

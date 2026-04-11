@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
-import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { HiOutlineUpload, HiX, HiOutlineZoomIn, HiChevronLeft, HiChevronRight } from 'react-icons/hi';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { collection, addDoc, query, orderBy, deleteDoc, doc, serverTimestamp, getDocs, limit, startAfter, getDoc } from 'firebase/firestore';
+import { HiOutlineUpload, HiX, HiOutlineZoomIn, HiChevronLeft, HiChevronRight, HiChevronDown } from 'react-icons/hi';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { compressImage } from '../utils/imageUtils';
@@ -8,6 +8,8 @@ import { uploadToImageKit } from '../imagekit';
 import './GalleryPage.css';
 
 const CATEGORIES = ['All', 'Classroom', 'Trip', 'Festival', 'Sports', 'Cultural', 'Farewell', 'Other'];
+
+const PAGE_SIZE = 10;
 
 export default function GalleryPage() {
   const { currentUser, isAdmin, memberProfile, CLASS_ID } = useAuth();
@@ -21,18 +23,50 @@ export default function GalleryPage() {
   const [uploadFile, setUploadFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState('');
+  const [lastDoc, setLastDoc] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const fileRef = useRef();
 
-  useEffect(() => {
-    const q = query(
-      collection(db, 'classes', CLASS_ID, 'gallery'),
-      orderBy('createdAt', 'desc')
-    );
-    return onSnapshot(q, snap => {
-      setPhotos(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
+  const fetchPhotos = useCallback(async (cursorDoc = null) => {
+    try {
+      let q;
+      if (cursorDoc) {
+        q = query(
+          collection(db, 'classes', CLASS_ID, 'gallery'),
+          orderBy('createdAt', 'desc'),
+          startAfter(cursorDoc),
+          limit(PAGE_SIZE)
+        );
+      } else {
+        q = query(
+          collection(db, 'classes', CLASS_ID, 'gallery'),
+          orderBy('createdAt', 'desc'),
+          limit(PAGE_SIZE)
+        );
+      }
+      const snap = await getDocs(q);
+      const newPhotos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setPhotos(prev => cursorDoc ? [...prev, ...newPhotos] : newPhotos);
+      setLastDoc(snap.docs[snap.docs.length - 1] || null);
+      setHasMore(snap.docs.length === PAGE_SIZE);
+    } catch (err) {
+      console.error('Failed to fetch gallery:', err);
+    }
   }, [CLASS_ID]);
 
+  useEffect(() => {
+    fetchPhotos();
+  }, [fetchPhotos]);
+
+  const handleLoadMore = async () => {
+    if (!hasMore || loadingMore) return;
+    setLoadingMore(true);
+    await fetchPhotos(lastDoc);
+    setLoadingMore(false);
+  };
+
+  // Client-side filter on the already-fetched photos
   const filtered = category === 'All' ? photos : photos.filter(p => p.category === category);
 
   const handleFileChange = (e) => {
@@ -64,7 +98,7 @@ export default function GalleryPage() {
         imagekitPath
       );
       
-      await addDoc(collection(db, 'classes', CLASS_ID, 'gallery'), {
+      const newDocRef = await addDoc(collection(db, 'classes', CLASS_ID, 'gallery'), {
         imagekitUrl: imagekitUrl,
         url: imagekitUrl, // Store as url for backwards compatibility
         caption: uploadCaption.trim(),
@@ -73,6 +107,9 @@ export default function GalleryPage() {
         uploadedById: currentUser.uid,
         createdAt: serverTimestamp(),
       });
+      // Optimistically prepend new photo to local state so it's immediately visible
+      const newDocSnap = await getDoc(newDocRef);
+      setPhotos(prev => [{ id: newDocSnap.id, ...newDocSnap.data() }, ...prev]);
       setUploadModal(false);
       setUploadFile(null);
       setPreview(null);
@@ -88,6 +125,8 @@ export default function GalleryPage() {
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this photo permanently?')) return;
     await deleteDoc(doc(db, 'classes', CLASS_ID, 'gallery', id));
+    // Remove from local state immediately
+    setPhotos(prev => prev.filter(p => p.id !== id));
   };
 
   const goLightbox = (dir) => {
@@ -153,6 +192,24 @@ export default function GalleryPage() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Load More Button */}
+      {hasMore && photos.length > 0 && (
+        <div className="gallery__load-more">
+          <button
+            id="gallery-load-more-btn"
+            className="btn btn-ghost gallery__load-more-btn"
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+          >
+            {loadingMore ? (
+              <><span className="spinner" /> Loading...</>
+            ) : (
+              <><HiChevronDown className="gallery__load-more-icon" /> Load More Photos</>
+            )}
+          </button>
         </div>
       )}
 

@@ -2,38 +2,77 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ─── Class members (existing) ───────────────────────────────────
-    match /classes/{classId}/members/{memberId} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == memberId;
+    // ─── Helper: is the user authenticated ───────────────────────────
+    function isAuth() {
+      return request.auth != null;
     }
 
-    // ─── Yearbook Messages ──────────────────────────────────────────
-    // Collection: yearbook_messages
-    // Fields: senderId, senderName, senderPhotoURL, receiverId, text, createdAt
+    // ─── Class Members ────────────────────────────────────────────────
+    // Anyone can view profiles; only the member themselves can write their own doc
+    match /classes/{classId}/members/{memberId} {
+      allow read: if true;
+      allow write: if isAuth() && request.auth.uid == memberId;
+    }
+
+    // ─── Gallery Photos ───────────────────────────────────────────────
+    // Anyone can view; only logged-in users can upload; only uploader or admin can delete
+    match /classes/{classId}/gallery/{photoId} {
+      allow read: if true;
+      allow create: if isAuth()
+        && request.resource.data.uploadedById == request.auth.uid
+        && request.resource.data.url is string
+        && request.resource.data.url.size() > 0;
+      allow delete: if isAuth()
+        && (resource.data.uploadedById == request.auth.uid
+            || request.auth.token.email == 'kirankumar07112003@gmail.com');
+      allow update: if false;
+    }
+
+    // ─── Events & Festivals ───────────────────────────────────────────
+    // Anyone can view; only logged-in users can post; only poster or admin can delete
+    match /classes/{classId}/events/{eventId} {
+      allow read: if true;
+      allow create: if isAuth()
+        && request.resource.data.postedById == request.auth.uid
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0;
+      allow delete: if isAuth()
+        && (resource.data.postedById == request.auth.uid
+            || request.auth.token.email == 'kirankumar07112003@gmail.com');
+      allow update: if false;
+    }
+
+    // ─── Wall / Message Wall ─────────────────────────────────────────
+    // Anyone can read; only logged-in users can post; only poster or admin can delete
+    match /classes/{classId}/wall/{postId} {
+      allow read: if true;
+      allow create: if isAuth()
+        && request.resource.data.authorId == request.auth.uid;
+      allow delete: if isAuth()
+        && (resource.data.authorId == request.auth.uid
+            || request.auth.token.email == 'kirankumar07112003@gmail.com');
+      allow update: if false;
+    }
+
+    // ─── Yearbook Messages (Private DMs) ─────────────────────────────
+    // Only sender or receiver can read; enforces 1 message per sender-receiver pair via app
     match /yearbook_messages/{msgId} {
+      allow read: if isAuth()
+        && (request.auth.uid == resource.data.senderId
+         || request.auth.uid == resource.data.receiverId);
 
-      // Only the sender or receiver can read the message
-      allow read: if request.auth != null &&
-        (request.auth.uid == resource.data.senderId ||
-         request.auth.uid == resource.data.receiverId);
+      allow create: if isAuth()
+        && request.auth.uid == request.resource.data.senderId
+        && request.resource.data.senderId != request.resource.data.receiverId
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 500;
 
-      // Create: logged in, sender === currentUser, not to self,
-      //         and no previous message from same sender to same receiver
-      allow create: if request.auth != null &&
-        request.auth.uid == request.resource.data.senderId &&
-        request.resource.data.senderId != request.resource.data.receiverId &&
-        // Enforce 1 message per sender-receiver pair via app logic
-        // (Firestore doesn't support aggregation in rules; handle in app)
-        request.resource.data.text is string &&
-        request.resource.data.text.size() > 0 &&
-        request.resource.data.text.size() <= 500;
-
-      // No updates or deletes allowed
+      // Messages are permanent — no edits or deletes
       allow update, delete: if false;
     }
 
-    // ─── Everything else ────────────────────────────────────────────
+    // ─── Deny everything else ─────────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;
     }

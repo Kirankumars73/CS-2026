@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { HiX, HiOutlinePhotograph, HiOutlinePlus } from 'react-icons/hi';
+import { useState, useEffect, useCallback } from 'react';
+import { collection, addDoc, query, orderBy, deleteDoc, doc, serverTimestamp, getDocs, limit, startAfter } from 'firebase/firestore';
+import { HiX, HiOutlinePhotograph, HiOutlinePlus, HiChevronDown } from 'react-icons/hi';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { compressImage, uploadToBothServices } from '../utils/imageUtils';
+import { compressImage, uploadToImageKitOnly } from '../utils/imageUtils';
 import EventCard from '../components/ui/event-card';
 import './EventsPage.css';
 
@@ -13,6 +13,8 @@ const CATEGORY_ICONS = {
   Cultural: '🎭', Classroom: '📚', Other: '✨', All: '🌟',
 };
 
+const PAGE_SIZE = 10;
+
 export default function EventsPage() {
   const { currentUser, memberProfile, isAdmin, CLASS_ID } = useAuth();
   const [events, setEvents] = useState([]);
@@ -21,18 +23,52 @@ export default function EventsPage() {
   const [viewingEvent, setViewingEvent] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [lastDoc, setLastDoc] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [form, setForm] = useState({
     title: '', description: '', date: '', category: 'Festival', 
     photo: null, photoPreview: null,
     additionalPhotos: [], additionalPreviews: []
   });
 
-  useEffect(() => {
-    const q = query(collection(db, 'classes', CLASS_ID, 'events'), orderBy('createdAt', 'desc'));
-    return onSnapshot(q, snap => {
-      setEvents(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
+  const fetchEvents = useCallback(async (cursorDoc = null) => {
+    try {
+      let q;
+      if (cursorDoc) {
+        q = query(
+          collection(db, 'classes', CLASS_ID, 'events'),
+          orderBy('createdAt', 'desc'),
+          startAfter(cursorDoc),
+          limit(PAGE_SIZE)
+        );
+      } else {
+        q = query(
+          collection(db, 'classes', CLASS_ID, 'events'),
+          orderBy('createdAt', 'desc'),
+          limit(PAGE_SIZE)
+        );
+      }
+      const snap = await getDocs(q);
+      const newEvents = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setEvents(prev => cursorDoc ? [...prev, ...newEvents] : newEvents);
+      setLastDoc(snap.docs[snap.docs.length - 1] || null);
+      setHasMore(snap.docs.length === PAGE_SIZE);
+    } catch (err) {
+      console.error('Failed to fetch events:', err);
+    }
   }, [CLASS_ID]);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
+
+  const handleLoadMore = async () => {
+    if (!hasMore || loadingMore) return;
+    setLoadingMore(true);
+    await fetchEvents(lastDoc);
+    setLoadingMore(false);
+  };
 
   const filtered = category === 'All' ? events : events.filter(e => e.category === category);
 
@@ -85,48 +121,24 @@ export default function EventsPage() {
     setError('');
     try {
       let photoURL = '';
-      let photoURLImageKit = '';
-      
+
       if (form.photo) {
         const compressed = await compressImage(form.photo, 1200, 1200, 0.7);
         const fileName = `${Date.now()}_${form.photo.name}`;
-        const firebasePath = `classes/${CLASS_ID}/events/${fileName}`;
         const imagekitPath = `classes/${CLASS_ID}/events`;
-        
-        const { firebaseUrl, imagekitUrl } = await uploadToBothServices(
-          compressed,
-          firebasePath,
-          imagekitPath,
-          fileName
-        );
-        
-        photoURL = firebaseUrl;
-        photoURLImageKit = imagekitUrl || '';
+        const { url } = await uploadToImageKitOnly(compressed, imagekitPath, fileName);
+        photoURL = url;
       }
       
       const additionalPhotoURLs = [];
-      const additionalPhotoURLsImageKit = [];
-      
+
       if (form.additionalPhotos && form.additionalPhotos.length > 0) {
         for (const file of form.additionalPhotos) {
           const compressed = await compressImage(file, 1200, 1200, 0.7);
           const fileName = `extra_${Date.now()}_${file.name}`;
-          const firebasePath = `classes/${CLASS_ID}/events/${fileName}`;
           const imagekitPath = `classes/${CLASS_ID}/events`;
-          
-          const { firebaseUrl, imagekitUrl } = await uploadToBothServices(
-            compressed,
-            firebasePath,
-            imagekitPath,
-            fileName
-          );
-          
-          if (firebaseUrl) {
-            additionalPhotoURLs.push(firebaseUrl);
-          }
-          if (imagekitUrl) {
-            additionalPhotoURLsImageKit.push(imagekitUrl);
-          }
+          const { url } = await uploadToImageKitOnly(compressed, imagekitPath, fileName);
+          if (url) additionalPhotoURLs.push(url);
         }
       }
 
@@ -135,10 +147,8 @@ export default function EventsPage() {
         description: form.description.trim(),
         date: form.date,
         category: form.category,
-        photoURL,
-        photoURLImageKit,
-        additionalPhotoURLs,
-        additionalPhotoURLsImageKit,
+        photoURL,                 // ImageKit URL (single source of truth)
+        additionalPhotoURLs,      // ImageKit URLs
         postedBy: memberProfile?.name || currentUser?.displayName || 'Anonymous',
         postedById: currentUser.uid,
         createdAt: serverTimestamp(),
@@ -155,6 +165,8 @@ export default function EventsPage() {
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this event?')) return;
     await deleteDoc(doc(db, 'classes', CLASS_ID, 'events', id));
+    // Remove from local state immediately
+    setEvents(prev => prev.filter(e => e.id !== id));
   };
 
   return (
@@ -204,6 +216,24 @@ export default function EventsPage() {
               <EventCard event={event} index={index} onGalleryClick={(e) => setViewingEvent(e)} />
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Load More Button */}
+      {hasMore && events.length > 0 && (
+        <div className="events__load-more">
+          <button
+            id="events-load-more-btn"
+            className="btn btn-ghost events__load-more-btn"
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+          >
+            {loadingMore ? (
+              <><span className="spinner" /> Loading...</>
+            ) : (
+              <><HiChevronDown className="events__load-more-icon" /> Load More Events</>
+            )}
+          </button>
         </div>
       )}
 
