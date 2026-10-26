@@ -7,15 +7,21 @@
   margin-bottom: 28px;
 }
 
+/* Columns are filled in GalleryPage.jsx so loaded photos never move */
 .gallery__grid {
-  columns: 4;
-  column-gap: 16px;
-  gap: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+.gallery__column {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .gallery-item {
-  break-inside: avoid;
-  margin-bottom: 16px;
   position: relative;
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -26,7 +32,13 @@
 .gallery-item__img {
   width: 100%;
   display: block;
-  transition: transform var(--transition-slow);
+  aspect-ratio: 4 / 3; /* placeholder size until the photo loads */
+  opacity: 0;
+  transition: transform var(--transition-slow), opacity 0.4s ease;
+}
+.gallery-item__img.is-loaded {
+  aspect-ratio: auto;
+  opacity: 1;
 }
 .gallery-item:hover .gallery-item__img { transform: scale(1.04); }
 
@@ -184,10 +196,6 @@
   gap: 12px;
 }
 .lightbox__author { font-size: 0.8rem; color: rgba(255,255,255,0.5); }
-
-@media (max-width: 1024px) { .gallery__grid { columns: 3; } }
-@media (max-width: 768px)  { .gallery__grid { columns: 2; } }
-@media (max-width: 480px)  { .gallery__grid { columns: 1; } }
 
 /* Load More */
 .gallery__load-more {

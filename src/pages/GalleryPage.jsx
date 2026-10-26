@@ -11,6 +11,29 @@ const CATEGORIES = ['All', 'Classroom', 'Trip', 'Festival', 'Sports', 'Cultural'
 
 const PAGE_SIZE = 10;
 
+// Same breakpoints the grid used to have in CSS
+function getColumnCount() {
+  const w = window.innerWidth;
+  if (w <= 480) return 1;
+  if (w <= 768) return 2;
+  if (w <= 1024) return 3;
+  return 4;
+}
+
+// Holds a placeholder box until the photo has loaded, then fades it in
+function GalleryImage({ src, alt }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={`gallery-item__img ${loaded ? 'is-loaded' : ''}`}
+      loading="lazy"
+      onLoad={() => setLoaded(true)}
+    />
+  );
+}
+
 export default function GalleryPage() {
   const { currentUser, isAdmin, memberProfile, CLASS_ID } = useAuth();
   const [photos, setPhotos] = useState([]);
@@ -26,7 +49,14 @@ export default function GalleryPage() {
   const [lastDoc, setLastDoc] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [columnCount, setColumnCount] = useState(getColumnCount);
   const fileRef = useRef();
+
+  useEffect(() => {
+    const onResize = () => setColumnCount(getColumnCount());
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const fetchPhotos = useCallback(async (cursorDoc = null) => {
     try {
@@ -68,6 +98,11 @@ export default function GalleryPage() {
 
   // Client-side filter on the already-fetched photos
   const filtered = category === 'All' ? photos : photos.filter(p => p.category === category);
+
+  // Deal photos into columns left to right. Loading more only adds to the bottom of
+  // each column, so photos already on screen never move (CSS columns rebalanced them).
+  const columns = Array.from({ length: columnCount }, () => []);
+  filtered.forEach((photo, i) => columns[i % columnCount].push(photo));
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -167,29 +202,28 @@ export default function GalleryPage() {
           <p>{currentUser ? 'Upload the first photo to get started!' : 'Login to upload photos.'}</p>
         </div>
       ) : (
-        <div className="gallery__grid stagger-children">
-          {filtered.map(photo => (
-            <div key={photo.id} className="gallery-item clay-card" onClick={() => setLightbox(photo)}>
-              <img 
-                src={photo.imagekitUrl || photo.url} 
-                alt={photo.caption} 
-                className="gallery-item__img" 
-                loading="lazy" 
-              />
-              <div className="gallery-item__overlay">
-                <HiOutlineZoomIn className="gallery-item__zoom" />
-                {photo.caption && <p className="gallery-item__caption">{photo.caption}</p>}
-                <span className="badge badge-gold gallery-item__cat">{photo.category}</span>
-              </div>
-              {isAdmin && (
-                <button
-                  className="gallery-item__delete"
-                  onClick={e => { e.stopPropagation(); handleDelete(photo.id); }}
-                  title="Delete"
-                >
-                  <HiX />
-                </button>
-              )}
+        <div className="gallery__grid">
+          {columns.map((column, c) => (
+            <div key={c} className="gallery__column stagger-children">
+              {column.map(photo => (
+                <div key={photo.id} className="gallery-item clay-card" onClick={() => setLightbox(photo)}>
+                  <GalleryImage src={photo.imagekitUrl || photo.url} alt={photo.caption} />
+                  <div className="gallery-item__overlay">
+                    <HiOutlineZoomIn className="gallery-item__zoom" />
+                    {photo.caption && <p className="gallery-item__caption">{photo.caption}</p>}
+                    <span className="badge badge-gold gallery-item__cat">{photo.category}</span>
+                  </div>
+                  {isAdmin && (
+                    <button
+                      className="gallery-item__delete"
+                      onClick={e => { e.stopPropagation(); handleDelete(photo.id); }}
+                      title="Delete"
+                    >
+                      <HiX />
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
           ))}
         </div>
