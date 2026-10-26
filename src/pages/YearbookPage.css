@@ -1,3 +1,9 @@
+.yearbook__tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
 .yearbook__controls {
   display: flex;
   align-items: center;

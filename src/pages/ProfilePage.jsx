@@ -6,6 +6,7 @@ import {
 } from 'firebase/firestore';
 import {
   HiOutlineArrowLeft, HiOutlineMail, HiOutlinePencil, HiOutlinePencilAlt, HiCheck, HiOutlineLink, HiOutlineSearch,
+  HiOutlineBriefcase, HiOutlineLocationMarker, HiOutlineCake,
 } from 'react-icons/hi';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -14,6 +15,7 @@ import LoginModal from '../components/LoginModal';
 import SlamBook from '../components/SlamBook';
 import Signatures from '../components/Signatures';
 import { portraitUrl } from '../utils/imageUtils';
+import { fetchDetails, formatBirthday, cityLabel } from '../utils/details';
 import './ProfilePage.css';
 
 const CLASS_ID = import.meta.env.VITE_CLASS_ID || 'cs2026';
@@ -31,6 +33,9 @@ export default function ProfilePage() {
   const [sending, setSending] = useState(false);
   const [alreadySent, setAlreadySent] = useState(false);
   const [toast, setToast] = useState(null);
+
+  // Members-only details (birthday, city, now, email), visible to signed-in classmates
+  const [details, setDetails] = useState(null);
 
   // Received signatures (only loaded for own profile)
   const [inbox, setInbox] = useState([]);
@@ -52,6 +57,14 @@ export default function ProfilePage() {
       })
       .finally(() => setLoading(false));
   }, [userId]);
+
+  /* ── Load members-only details ── */
+  useEffect(() => {
+    if (!memberProfile) return;
+    fetchDetails(CLASS_ID, userId)
+      .then(setDetails)
+      .catch(err => console.error('Failed to load details:', err));
+  }, [memberProfile, userId]);
 
   /* ── Check if current user already signed ── */
   useEffect(() => {
@@ -178,6 +191,14 @@ export default function ProfilePage() {
           </p>
           <h1 className="profile__name">{profile.name || 'Unnamed'}</h1>
 
+          {(details?.now || details?.city || details?.birthday) && (
+            <ul className="profile__facts">
+              {details.now && <li><HiOutlineBriefcase /> {details.now}</li>}
+              {details.city && <li><HiOutlineLocationMarker /> {cityLabel(details.city)}</li>}
+              {details.birthday && <li><HiOutlineCake /> {formatBirthday(details.birthday)}</li>}
+            </ul>
+          )}
+
           {profile.quote && <blockquote className="profile__quote">“{profile.quote}”</blockquote>}
           {profile.bio && <p className="profile__bio">{profile.bio}</p>}
 
@@ -200,8 +221,8 @@ export default function ProfilePage() {
                     <HiOutlinePencil /> Sign {firstName}’s yearbook
                   </button>
                 )}
-                {profile.email && (
-                  <a href={`mailto:${profile.email}`} className="btn btn-glass">
+                {(details?.email || profile.email) && (
+                  <a href={`mailto:${details?.email || profile.email}`} className="btn btn-glass">
                     <HiOutlineMail /> Email
                   </a>
                 )}

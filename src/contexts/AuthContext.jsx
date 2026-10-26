@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { getRedirectResult, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../firebase';
+import { saveDetails } from '../utils/details';
 
 const AuthContext = createContext(null);
 
@@ -93,7 +94,6 @@ export function AuthProvider({ children }) {
     if (isNewMember) {
       await setDoc(ref, {
         uid: user.uid,
-        email: user.email,
         displayName: user.displayName || '',
         photoURL: user.photoURL || '',
         name: user.displayName || '',
@@ -105,6 +105,10 @@ export function AuthProvider({ children }) {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
+      // Email lives in the members-only details record, not the public profile.
+      // Don't let a failure here block joining; Edit Profile saves it again.
+      await saveDetails(CLASS_ID, user.uid, { email: user.email })
+        .catch(err => console.error('Could not save email to details:', err));
     } else {
       await setDoc(ref, { updatedAt: serverTimestamp() }, { merge: true });
     }

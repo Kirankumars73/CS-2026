@@ -58,6 +58,24 @@
   overflow-wrap: anywhere;
 }
 
+.profile__facts {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: -6px 0 20px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.profile__facts li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  overflow-wrap: anywhere;
+}
+.profile__facts svg { flex-shrink: 0; color: var(--ink-3); font-size: 1.05rem; }
+
 .profile__quote {
   max-width: 40ch;
   padding-left: 16px;

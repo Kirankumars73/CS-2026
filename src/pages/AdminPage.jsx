@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import {
   collection, onSnapshot, query, orderBy, deleteDoc, doc, getDocs, getDoc, writeBatch,
-  where, limit, getCountFromServer, Timestamp,
+  where, limit, getCountFromServer, Timestamp, deleteField,
 } from 'firebase/firestore';
 import { HiOutlineLightningBolt, HiX, HiOutlineUsers, HiOutlinePhotograph, HiOutlineClipboard, HiOutlineCalendar } from 'react-icons/hi';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { CHAT_RETENTION_DAYS, CHAT_RETENTION_MS } from '../utils/chat';
+import { fetchAllDetails, detailsRef } from '../utils/details';
 import './AdminPage.css';
 
 const TABS = [
@@ -33,6 +34,41 @@ export default function AdminPage() {
   const [oldChatCount, setOldChatCount] = useState(null);
   const [cleaningChat, setCleaningChat] = useState(false);
   const [chatCleanResult, setChatCleanResult] = useState(null);
+  const [details, setDetails] = useState({});
+  const [movingEmails, setMovingEmails] = useState(false);
+  const [moveEmailsResult, setMoveEmailsResult] = useState(null);
+
+  // Emails now live in the members-only details records
+  useEffect(() => {
+    if (!isAdmin) return;
+    fetchAllDetails(CLASS_ID)
+      .then(setDetails)
+      .catch(err => console.error('Could not load details:', err));
+  }, [isAdmin, CLASS_ID]);
+
+  const publicEmails = data.members.filter(m => m.email);
+
+  // One-off: move emails out of the public member profiles into the members-only details records
+  const handleMoveEmails = async () => {
+    if (!window.confirm(`Move ${publicEmails.length} email addresses out of the public profiles?`)) return;
+    setMovingEmails(true);
+    setMoveEmailsResult(null);
+    try {
+      const batch = writeBatch(db);
+      for (const m of publicEmails) {
+        batch.set(detailsRef(CLASS_ID, m.id), { email: m.email }, { merge: true });
+        batch.update(doc(db, 'classes', CLASS_ID, 'members', m.id), { email: deleteField() });
+      }
+      await batch.commit();
+      setDetails(await fetchAllDetails(CLASS_ID));
+      setMoveEmailsResult({ ok: true, moved: publicEmails.length });
+    } catch (err) {
+      console.error('Move emails error:', err);
+      setMoveEmailsResult({ ok: false, error: err.message });
+    } finally {
+      setMovingEmails(false);
+    }
+  };
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -235,7 +271,7 @@ export default function AdminPage() {
                 </div>
                 <div className="admin-row__info">
                   <p className="admin-row__title">{m.name || 'Unnamed'}</p>
-                  <p className="admin-row__sub">{m.email} · Roll #{m.rollNumber || '—'}</p>
+                  <p className="admin-row__sub">{details[m.id]?.email || m.email || 'no email'} · Roll #{m.rollNumber || '—'}</p>
                 </div>
                 <button
                   className="btn btn-danger btn-sm admin-row__del"
@@ -296,6 +332,36 @@ export default function AdminPage() {
                 </button>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Hide emails ── */}
+      <div className="admin__migration glass-card">
+        <div className="admin__migration-text">
+          <span className="admin__migration-title">Hide email addresses</span>
+          <span className="admin__migration-desc">
+            Moves emails from the public profiles into the members-only records, so only logged-in classmates
+            can see them. <strong>{publicEmails.length}</strong> profile{publicEmails.length === 1 ? '' : 's'} still
+            show{publicEmails.length === 1 ? 's' : ''} an email publicly.
+          </span>
+        </div>
+        <button
+          className="btn btn-glass btn-sm"
+          onClick={handleMoveEmails}
+          disabled={movingEmails || publicEmails.length === 0}
+          style={{ flexShrink: 0 }}
+        >
+          {movingEmails ? (
+            <><span className="spinner" style={{ width: 14, height: 14 }} /> Moving…</>
+          ) : 'Move emails'}
+        </button>
+        {moveEmailsResult && (
+          <div className={`admin__migration-result ${moveEmailsResult.ok ? 'ok' : 'err'}`}>
+            {moveEmailsResult.ok
+              ? `Done — ${moveEmailsResult.moved} email${moveEmailsResult.moved === 1 ? '' : 's'} moved.`
+              : `Error: ${moveEmailsResult.error}`
+            }
           </div>
         )}
       </div>

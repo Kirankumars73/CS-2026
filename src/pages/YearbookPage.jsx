@@ -6,14 +6,19 @@ import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import LoginModal from '../components/LoginModal';
 import { portraitUrl } from '../utils/imageUtils';
+import { fetchAllDetails } from '../utils/details';
+import WhereNow from '../components/WhereNow';
 import './YearbookPage.css';
 
 export default function YearbookPage() {
-  const { currentUser, CLASS_ID } = useAuth();
+  const { currentUser, memberProfile, CLASS_ID } = useAuth();
   const [members, setMembers] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [showLogin, setShowLogin] = useState(false);
+  const [view, setView] = useState('portraits'); // 'portraits' | 'now'
+  const [details, setDetails] = useState(null);
+  const [detailsError, setDetailsError] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,6 +30,17 @@ export default function YearbookPage() {
     return unsub;
   }, [CLASS_ID]);
 
+  // "Where we are now" uses members-only details, loaded the first time that view is opened
+  useEffect(() => {
+    if (view !== 'now' || !memberProfile || details) return;
+    fetchAllDetails(CLASS_ID)
+      .then(setDetails)
+      .catch(err => {
+        console.error('Failed to load details:', err);
+        setDetailsError('Couldn’t load where everyone is. Please refresh.');
+      });
+  }, [view, memberProfile, details, CLASS_ID]);
+
   // Filter by search
   const filtered = members.filter(m => {
     const matchSearch = !search ||
@@ -34,11 +50,8 @@ export default function YearbookPage() {
   });
 
   // Sort by roll number (ascending), members without roll go to the end
-  const sorted = [...filtered].sort((a, b) => {
-    const ra = parseInt(a.rollNumber) || Infinity;
-    const rb = parseInt(b.rollNumber) || Infinity;
-    return ra - rb;
-  });
+  const byRoll = (a, b) => (parseInt(a.rollNumber) || Infinity) - (parseInt(b.rollNumber) || Infinity);
+  const sorted = [...filtered].sort(byRoll);
 
   const getInitials = (name) =>
     (name || 'U').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
@@ -54,6 +67,15 @@ export default function YearbookPage() {
         </p>
       </div>
 
+      <div className="yearbook__tabs" role="tablist">
+        <button role="tab" aria-selected={view === 'portraits'} className={`chip ${view === 'portraits' ? 'active' : ''}`} onClick={() => setView('portraits')}>
+          Portraits
+        </button>
+        <button role="tab" aria-selected={view === 'now'} className={`chip ${view === 'now' ? 'active' : ''}`} onClick={() => setView('now')}>
+          Where we are now
+        </button>
+      </div>
+
       {/* Controls */}
       <div className="yearbook__controls">
         <div className="yearbook__search">
@@ -62,7 +84,7 @@ export default function YearbookPage() {
             id="yearbook-search"
             type="text"
             className="input-glass yearbook__search-input"
-            placeholder="Search by name or roll number"
+            placeholder={view === 'now' ? 'Search by name, city or work' : 'Search by name or roll number'}
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -75,8 +97,23 @@ export default function YearbookPage() {
         )}
       </div>
 
-      {/* Grid */}
-      {loading ? (
+      {view === 'now' ? (
+        !memberProfile ? (
+          <div className="empty-state">
+            <h3>Classmates only</h3>
+            <p>Log in to see where everyone is now and what they’re up to.</p>
+            {!currentUser && (
+              <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => setShowLogin(true)}>Log in</button>
+            )}
+          </div>
+        ) : detailsError ? (
+          <div className="empty-state"><p>{detailsError}</p></div>
+        ) : !details || loading ? (
+          <div className="empty-state"><div className="spinner" style={{ width: 36, height: 36 }}></div></div>
+        ) : (
+          <WhereNow members={[...members].sort(byRoll)} details={details} search={search} currentUserId={currentUser?.uid} />
+        )
+      ) : loading ? (
         <div className="empty-state">
           <div className="spinner" style={{ width: 36, height: 36 }}></div>
         </div>

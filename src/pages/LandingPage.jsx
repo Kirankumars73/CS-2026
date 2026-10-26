@@ -6,6 +6,8 @@ import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { thumbUrl, portraitUrl } from '../utils/imageUtils';
 import LoginModal from '../components/LoginModal';
+import Birthdays from '../components/Birthdays';
+import { fetchAllDetails, birthdaysAround } from '../utils/details';
 import './LandingPage.css';
 
 const photoOf = (m) => m.profilePhotoImageKit || m.profilePhoto || '';
@@ -21,13 +23,15 @@ function shuffled(list) {
 }
 
 export default function LandingPage() {
-  const { currentUser, CLASS_ID } = useAuth();
+  const { currentUser, memberProfile, CLASS_ID } = useAuth();
   const [members, setMembers] = useState([]);
   const [featured, setFeatured] = useState([]);
   const [counts, setCounts] = useState(null);
   const [latestPhotos, setLatestPhotos] = useState([]);
   const [latestNotes, setLatestNotes] = useState([]);
   const [showLogin, setShowLogin] = useState(false);
+  const [details, setDetails] = useState(null);
+  const [today] = useState(() => new Date());
 
   useEffect(() => {
     const col = (name) => collection(db, 'classes', CLASS_ID, name);
@@ -56,9 +60,20 @@ export default function LandingPage() {
       .catch(err => console.error('Failed to load notes:', err));
   }, [CLASS_ID]);
 
+  // Birthdays are members-only details, so they only load for signed-in classmates
+  useEffect(() => {
+    if (!memberProfile) return;
+    fetchAllDetails(CLASS_ID)
+      .then(setDetails)
+      .catch(err => console.error('Failed to load birthdays:', err));
+  }, [memberProfile, CLASS_ID]);
+
   // Everyone is on the cover — repeat the faces so the mosaic fills wide screens
   const withPhotos = members.filter(photoOf);
   const mosaic = withPhotos.length ? [...withPhotos, ...withPhotos] : [];
+
+  const birthdays = details ? birthdaysAround(members, details, today) : { today: [], upcoming: [] };
+  const hasBirthdays = birthdays.today.length > 0 || birthdays.upcoming.length > 0;
 
   const figures = [
     { label: 'Classmates', value: members.length },
@@ -119,6 +134,21 @@ export default function LandingPage() {
           </dl>
         </div>
       </section>
+
+      {/* Birthdays (signed-in classmates only; renders nothing when none are near) */}
+      {memberProfile && hasBirthdays && (
+        <section className="landing__section landing__section--tight">
+          <div className="landing__container">
+            <div className="landing__head">
+              <div>
+                <p className="section-label">Birthdays</p>
+                <h2 className="landing__title">{birthdays.today.length ? 'Happy birthday!' : 'Coming up'}</h2>
+              </div>
+            </div>
+            <Birthdays today={birthdays.today} upcoming={birthdays.upcoming} />
+          </div>
+        </section>
+      )}
 
       {/* Portraits */}
       {featured.length > 0 && (

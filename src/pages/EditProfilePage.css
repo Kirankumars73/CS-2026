@@ -118,6 +118,19 @@
   color: var(--ink-3);
 }
 
+/* Where I am now */
+.edit-profile__now {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 20px;
+}
+.edit-profile__field--wide { grid-column: 1 / -1; }
+.edit-profile__birthday {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 10px;
+}
+
 /* Slam book */
 .edit-profile__block-head { margin-bottom: 20px; }
 .edit-profile__block-title {
@@ -172,7 +185,8 @@
   .edit-profile__block { padding: 20px 16px; }
   .edit-profile__basics { grid-template-columns: 1fr; gap: 20px; }
   .edit-profile__photo-section { max-width: 200px; }
-  .edit-profile__slambook { grid-template-columns: 1fr; }
+  .edit-profile__slambook,
+  .edit-profile__now { grid-template-columns: 1fr; }
   .edit-profile__submit .btn { width: 100%; }
 }
 @media (max-width: 420px) {

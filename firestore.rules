@@ -8,11 +8,31 @@ service cloud.firestore {
       return isAuth() && exists(/databases/$(database)/documents/classes/$(classId)/members/$(request.auth.uid));
     }
     function validText(data) { return data.text is string && data.text.size() > 0 && data.text.size() <= 500; }
+    // Members-only details: birthday "MM-DD" (no year), city, what they're doing now, own email
+    function validDetails(d) {
+      return d.keys().hasOnly(['birthday', 'city', 'now', 'email', 'updatedAt'])
+        && (!('birthday' in d) || d.birthday == '' || d.birthday.matches('^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$'))
+        && (!('city' in d) || (d.city is string && d.city.size() <= 60))
+        && (!('now' in d) || (d.now is string && d.now.size() <= 100))
+        && (!('email' in d) || d.email == request.auth.token.email);
+    }
 
     match /classes/{classId}/members/{memberId} {
       allow read: if true;
       allow write: if isAuth() && request.auth.uid == memberId;
       allow delete: if isAdmin();   // lets the Admin panel remove members
+      // Admin panel "Hide email addresses": may only remove/change the email field
+      allow update: if isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email']);
+    }
+
+    // Birthday, city, what they're doing now, email: readable by signed-in classmates only
+    match /classes/{classId}/details/{memberId} {
+      allow read: if isMember(classId);
+      allow create, update: if isMember(classId) && request.auth.uid == memberId && validDetails(request.resource.data);
+      allow delete: if isAuth() && (request.auth.uid == memberId || isAdmin());
+      // Admin panel "Hide email addresses" copies emails in (email field only)
+      allow create: if isAdmin() && request.resource.data.keys().hasOnly(['email']);
+      allow update: if isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email']);
     }
     match /classes/{classId}/gallery/{photoId} {
       allow read: if true;

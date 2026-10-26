@@ -302,3 +302,4 @@
   .print-row { gap: 12px; }
   .print { padding: 7px 7px 9px; }
 }
+.landing__section--tight { padding-bottom: 0; }

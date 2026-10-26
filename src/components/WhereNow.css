@@ -1,0 +1,108 @@
+.where-now {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.where-now__nudge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 18px;
+  background: var(--surface);
+  border: 1px dashed var(--rule-strong);
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+.where-now__empty {
+  color: var(--ink-3);
+  font-style: italic;
+}
+
+.where-now__city {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+  border-bottom: 2px solid var(--ink);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.7rem;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.where-now__count {
+  padding: 3px 8px 2px;
+  border-radius: var(--radius-sm);
+  background: var(--navy);
+  color: #FFFFFF;
+  font-size: 0.95rem;
+}
+
+.where-now__list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px 24px;
+}
+.where-now__person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 4px 0;
+}
+.where-now__photo {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  background: var(--photo-bg);
+  filter: grayscale(1);
+  transition: filter var(--transition-base);
+}
+.where-now__person:hover .where-now__photo { filter: none; }
+.where-now__photo--initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  color: var(--ink-3);
+  filter: none;
+}
+.where-now__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.where-now__name {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.08rem;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.where-now__person:hover .where-now__name { text-decoration: underline; text-underline-offset: 3px; }
+.where-now__doing {
+  font-size: 0.86rem;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+.where-now__group--missing .where-now__city { border-bottom-width: 1px; border-color: var(--rule-strong); font-size: 1.3rem; }
+.where-now__missing {
+  font-size: 0.9rem;
+  line-height: 1.8;
+  color: var(--ink-3);
+}
+.where-now__missing a { color: var(--ink-2); font-weight: 600; }
+.where-now__missing a:hover { color: var(--ink); text-decoration: underline; }

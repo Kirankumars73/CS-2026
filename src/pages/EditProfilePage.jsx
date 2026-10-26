@@ -6,9 +6,11 @@ import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { compressImage, uploadToImageKitOnly } from '../utils/imageUtils';
 import { SLAMBOOK_PROMPTS, SLAMBOOK_MAX } from '../utils/slambook';
+import { fetchDetails, saveDetails, MONTHS, isValidBirthday, toBirthday, parseBirthday } from '../utils/details';
 import './EditProfilePage.css';
 
 const ROLL_NUMBERS = Array.from({ length: 67 }, (_, i) => i + 1);
+const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
 
 export default function EditProfilePage() {
   const { currentUser, memberProfile, refreshProfile, CLASS_ID } = useAuth();
@@ -31,6 +33,18 @@ export default function EditProfilePage() {
     Object.fromEntries(SLAMBOOK_PROMPTS.map(p => [p.key, memberProfile?.slambook?.[p.key] || '']))
   );
   const [newPhoto, setNewPhoto] = useState(null);
+  // Members-only details (classes/{classId}/details/{uid})
+  const [details, setDetails] = useState({ now: '', city: '', month: '', day: '' });
+
+  useEffect(() => {
+    fetchDetails(CLASS_ID, currentUser.uid)
+      .then(d => {
+        if (!d) return;
+        const b = parseBirthday(d.birthday);
+        setDetails({ now: d.now || '', city: d.city || '', month: b ? String(b.month) : '', day: b ? String(b.day) : '' });
+      })
+      .catch(err => console.error('Failed to load details:', err));
+  }, [CLASS_ID, currentUser.uid]);
 
   // "Fill my slam book" links straight to that section
   useEffect(() => {
@@ -39,6 +53,11 @@ export default function EditProfilePage() {
 
   const handleChange = (field, value) => {
     setForm(f => ({ ...f, [field]: value }));
+    setError('');
+  };
+
+  const handleDetailsChange = (field, value) => {
+    setDetails(d => ({ ...d, [field]: value }));
     setError('');
   };
 
@@ -62,6 +81,8 @@ export default function EditProfilePage() {
     e.preventDefault();
     if (!form.name.trim()) { setError('Name is required.'); return; }
     if (!form.rollNumber) { setError('Roll number is required.'); return; }
+    if (Boolean(details.month) !== Boolean(details.day)) { setError('Pick both the day and the month of your birthday, or neither.'); return; }
+    if (details.month && !isValidBirthday(Number(details.month), Number(details.day))) { setError('That birthday date doesn’t exist.'); return; }
     setSaving(true);
     setError('');
     setSuccess('');
@@ -92,10 +113,16 @@ export default function EditProfilePage() {
         slambook: Object.fromEntries(SLAMBOOK_PROMPTS.map(p => [p.key, slambook[p.key].trim()])),
         profilePhoto,           // ImageKit URL (single source of truth)
         profilePhotoImageKit: profilePhoto, // keep in sync for any older reads
-        email: currentUser.email,
         uid: currentUser.uid,
         updatedAt: serverTimestamp(),
       }, { merge: true });
+      // Birthday, city, what you're doing now and your email are members-only, so they're stored separately
+      await saveDetails(CLASS_ID, currentUser.uid, {
+        now: details.now.trim(),
+        city: details.city.trim(),
+        birthday: details.month ? toBirthday(Number(details.month), Number(details.day)) : '',
+        email: currentUser.email,
+      });
       await refreshProfile();
       setSuccess('Saved. Taking you to your page…');
       setTimeout(() => navigate(`/profile/${currentUser.uid}`), 1200);
@@ -199,6 +226,63 @@ export default function EditProfilePage() {
                 maxLength={500}
               />
               <span className="edit-profile__char-count">{form.bio.length}/500</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Where I am now */}
+        <section className="edit-profile__block" id="now">
+          <div className="edit-profile__block-head">
+            <h2 className="edit-profile__block-title">Where I am now</h2>
+            <p>Only logged-in classmates can see these, so the class can find you later.</p>
+          </div>
+          <div className="edit-profile__now">
+            <div className="edit-profile__field edit-profile__field--wide">
+              <label className="edit-profile__label" htmlFor="details-now">What are you doing now?</label>
+              <input
+                id="details-now"
+                type="text"
+                className="input-glass"
+                placeholder="e.g. Software Engineer at Infosys"
+                value={details.now}
+                onChange={e => handleDetailsChange('now', e.target.value)}
+                maxLength={100}
+              />
+            </div>
+            <div className="edit-profile__field">
+              <label className="edit-profile__label" htmlFor="details-city">City</label>
+              <input
+                id="details-city"
+                type="text"
+                className="input-glass"
+                placeholder="e.g. Bengaluru"
+                value={details.city}
+                onChange={e => handleDetailsChange('city', e.target.value)}
+                maxLength={60}
+              />
+            </div>
+            <div className="edit-profile__field">
+              <span className="edit-profile__label" id="details-birthday-label">Birthday</span>
+              <div className="edit-profile__birthday" role="group" aria-labelledby="details-birthday-label">
+                <select
+                  className="input-glass"
+                  aria-label="Day"
+                  value={details.day}
+                  onChange={e => handleDetailsChange('day', e.target.value)}
+                >
+                  <option value="">Day</option>
+                  {DAYS.map(d => <option key={d} value={String(d)}>{d}</option>)}
+                </select>
+                <select
+                  className="input-glass"
+                  aria-label="Month"
+                  value={details.month}
+                  onChange={e => handleDetailsChange('month', e.target.value)}
+                >
+                  <option value="">Month</option>
+                  {MONTHS.map((m, i) => <option key={m} value={String(i + 1)}>{m}</option>)}
+                </select>
+              </div>
             </div>
           </div>
         </section>
