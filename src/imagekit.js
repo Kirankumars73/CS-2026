@@ -1,15 +1,27 @@
+import { auth } from './firebase';
+
 // ImageKit upload uses direct fetch — SDK not needed
 // Keeping stub so named export `imagekit` doesn't break imports
 const imagekit = null;
 
 export const IMAGEKIT_URL_ENDPOINT = import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT || "https://ik.imagekit.io/8ewg8di9l";
 
+// Ask our server (api/imagekit-auth.js) to sign one upload. The private key stays on the server.
+async function getUploadAuth() {
+  const idToken = await auth.currentUser?.getIdToken();
+  if (!idToken) throw new Error('Please log in to upload photos.');
+  const res = await fetch('/api/imagekit-auth', {
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (!res.ok) {
+    const { error } = await res.json().catch(() => ({}));
+    throw new Error(error || `Upload authorization failed (${res.status})`);
+  }
+  return res.json();
+}
+
 /**
- * Upload image to ImageKit.
- * Strategy:
- *   1. Try unauthenticated upload (public key only) — works once you turn OFF
- *      "Restrict unauthenticated media uploads" in ImageKit dashboard.
- *   2. If ImageKit returns 400/401, fall back to private key auth automatically.
+ * Upload image to ImageKit with a signature from our server (signed upload).
  * Includes 3x automatic retry with exponential backoff.
  *
  * @param {File|Blob} file - The file to upload
@@ -20,43 +32,28 @@ export const IMAGEKIT_URL_ENDPOINT = import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT 
 export async function uploadToImageKit(file, fileName, folder = '') {
   const MAX_RETRIES = 3;
   const TIMEOUT_MS = 30000;
-  const PUBLIC_KEY  = import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY  || '';
-  const PRIVATE_KEY = import.meta.env.VITE_IMAGEKIT_PRIVATE_KEY || '';
-
-  const buildForm = () => {
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('fileName', fileName);
-    fd.append('publicKey', PUBLIC_KEY);
-    if (folder) fd.append('folder', folder);
-    return fd;
-  };
+  const PUBLIC_KEY = import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY || '';
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
+      // Each signature works once, so get a fresh one per attempt
+      const { token, expire, signature } = await getUploadAuth();
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('fileName', fileName);
+      fd.append('publicKey', PUBLIC_KEY);
+      fd.append('token', token);
+      fd.append('expire', expire);
+      fd.append('signature', signature);
+      if (folder) fd.append('folder', folder);
+
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
-      // First: try unauthenticated (public key only)
-      let res = await fetch('https://upload.imagekit.io/api/v1/files/upload', {
+      const res = await fetch('https://upload.imagekit.io/api/v1/files/upload', {
         method: 'POST',
-        body: buildForm(),
+        body: fd,
         signal: controller.signal,
       });
-
-      // Fallback: if auth is missing, use private key (until dashboard toggle is set)
-      if ((res.status === 400 || res.status === 401) && PRIVATE_KEY) {
-        const controller2 = new AbortController();
-        const timer2 = setTimeout(() => controller2.abort(), TIMEOUT_MS);
-        res = await fetch('https://upload.imagekit.io/api/v1/files/upload', {
-          method: 'POST',
-          headers: { 'Authorization': `Basic ${btoa(PRIVATE_KEY + ':')}` },
-          body: buildForm(),
-          signal: controller2.signal,
-        });
-        clearTimeout(timer2);
-      }
-
       clearTimeout(timer);
 
       if (!res.ok) {

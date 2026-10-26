@@ -19,8 +19,10 @@ Add the following to your `.env` file:
 ```env
 VITE_IMAGEKIT_URL_ENDPOINT=https://ik.imagekit.io/your_id_here
 VITE_IMAGEKIT_PUBLIC_KEY=public_your_key_here
-VITE_IMAGEKIT_PRIVATE_KEY=private_your_key_here
+IMAGEKIT_PRIVATE_KEY=private_your_key_here
 ```
+
+The private key is **server-only**: `api/imagekit-auth.js` uses it to sign each upload for signed-in class members, and the browser only ever sees the short-lived signature. Never name it `VITE_…` — Vite puts every `VITE_` variable it uses into the public JavaScript. Uploads go through the API function, so test them locally with `vercel dev` rather than `npm run dev`.
 
 ### 3. How It Works
 
