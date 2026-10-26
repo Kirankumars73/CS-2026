@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy, deleteDoc, doc, getDocs, getDoc, writeBatch } from 'firebase/firestore';
+import {
+  collection, onSnapshot, query, orderBy, deleteDoc, doc, getDocs, getDoc, writeBatch,
+  where, limit, getCountFromServer, Timestamp,
+} from 'firebase/firestore';
 import { HiOutlineLightningBolt, HiX, HiOutlineUsers, HiOutlinePhotograph, HiOutlineClipboard, HiOutlineCalendar } from 'react-icons/hi';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { CHAT_RETENTION_DAYS, CHAT_RETENTION_MS } from '../utils/chat';
 import './AdminPage.css';
 
 const TABS = [
@@ -13,6 +17,12 @@ const TABS = [
   { key: 'events',   label: 'Events',   icon: <HiOutlineCalendar /> },
 ];
 
+// Chat messages older than the retention period
+const oldChatQuery = (classId) => query(
+  collection(db, 'classes', classId, 'chat'),
+  where('createdAt', '<', Timestamp.fromMillis(Date.now() - CHAT_RETENTION_MS))
+);
+
 export default function AdminPage() {
   const { isAdmin, CLASS_ID } = useAuth();
   const navigate = useNavigate();
@@ -20,6 +30,41 @@ export default function AdminPage() {
   const [data, setData] = useState({ members: [], gallery: [], wall: [], events: [] });
   const [backfilling, setBackfilling] = useState(false);
   const [backfillResult, setBackfillResult] = useState(null);
+  const [oldChatCount, setOldChatCount] = useState(null);
+  const [cleaningChat, setCleaningChat] = useState(false);
+  const [chatCleanResult, setChatCleanResult] = useState(null);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    getCountFromServer(oldChatQuery(CLASS_ID))
+      .then(snap => setOldChatCount(snap.data().count))
+      .catch(err => console.error('Could not count old chat messages:', err));
+  }, [isAdmin, CLASS_ID]);
+
+  // Deletes old chat messages in batches. New messages are removed automatically by the Firestore TTL policy.
+  const handleDeleteOldChat = async () => {
+    if (!window.confirm(`Delete ${oldChatCount} chat messages older than ${CHAT_RETENTION_DAYS} days? This is permanent.`)) return;
+    setCleaningChat(true);
+    setChatCleanResult(null);
+    try {
+      let deleted = 0;
+      for (;;) {
+        const snap = await getDocs(query(oldChatQuery(CLASS_ID), limit(400)));
+        if (snap.empty) break;
+        const batch = writeBatch(db);
+        snap.docs.forEach(d => batch.delete(d.ref));
+        await batch.commit();
+        deleted += snap.size;
+      }
+      setOldChatCount(0);
+      setChatCleanResult({ ok: true, deleted });
+    } catch (err) {
+      console.error('Chat cleanup error:', err);
+      setChatCleanResult({ ok: false, error: err.message });
+    } finally {
+      setCleaningChat(false);
+    }
+  };
 
   useEffect(() => {
     if (!isAdmin) { navigate('/yearbook'); return; }
@@ -251,6 +296,36 @@ export default function AdminPage() {
                 </button>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Chat cleanup ── */}
+      <div className="admin__migration glass-card">
+        <div className="admin__migration-text">
+          <span className="admin__migration-title">Chat cleanup</span>
+          <span className="admin__migration-desc">
+            Class chat keeps {CHAT_RETENTION_DAYS} days of messages. New messages are deleted automatically
+            once the Firestore TTL policy is on; this removes older ones that were sent before that.
+            {oldChatCount !== null && <> <strong>{oldChatCount}</strong> message{oldChatCount === 1 ? '' : 's'} older than {CHAT_RETENTION_DAYS} days right now.</>}
+          </span>
+        </div>
+        <button
+          className="btn btn-danger btn-sm"
+          onClick={handleDeleteOldChat}
+          disabled={cleaningChat || !oldChatCount}
+          style={{ flexShrink: 0 }}
+        >
+          {cleaningChat ? (
+            <><span className="spinner" style={{ width: 14, height: 14 }} /> Deleting…</>
+          ) : `Delete old messages`}
+        </button>
+        {chatCleanResult && (
+          <div className={`admin__migration-result ${chatCleanResult.ok ? 'ok' : 'err'}`}>
+            {chatCleanResult.ok
+              ? `Done — deleted ${chatCleanResult.deleted} old message${chatCleanResult.deleted === 1 ? '' : 's'}.`
+              : `Error: ${chatCleanResult.error}`
+            }
           </div>
         )}
       </div>

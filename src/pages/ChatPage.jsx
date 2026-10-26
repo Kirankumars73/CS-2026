@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, limit } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, limit, Timestamp } from 'firebase/firestore';
 import { HiOutlinePaperAirplane, HiOutlineChat, HiOutlineChatAlt2 } from 'react-icons/hi';
 import { Link } from 'react-router-dom';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { CHAT_RETENTION_MS } from '../utils/chat';
 import './ChatPage.css';
 
 const MAX_MESSAGES = 100;
@@ -49,6 +50,7 @@ export default function ChatPage() {
         authorId: currentUser.uid,
         photoURL: memberProfile?.profilePhoto || currentUser?.photoURL || '',
         createdAt: serverTimestamp(),
+        expireAt: Timestamp.fromMillis(Date.now() + CHAT_RETENTION_MS),   // deleted by Firestore TTL
       });
     } catch (err) {
       console.error('Send failed:', err);
@@ -75,7 +77,7 @@ export default function ChatPage() {
         <HiOutlineChat className="chat__header-icon" />
         <div>
           <h1 className="chat__header-title">Class chat</h1>
-          <p className="chat__header-sub">The whole class, one conversation</p>
+          <p className="chat__header-sub">The whole class, one conversation · messages are kept for 3 months</p>
         </div>
         <Link to="/dm" className="btn btn-glass btn-sm" style={{ marginLeft: 'auto' }}>
           <HiOutlineChatAlt2 /> DMs
