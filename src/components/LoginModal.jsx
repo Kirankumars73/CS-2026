@@ -33,7 +33,12 @@ export default function LoginModal({ onClose }) {
     setLoading(true);
     setError('');
     try {
-      const user = await loginWithGoogle();
+      const { user, isMember } = await loginWithGoogle();
+      if (isMember) {
+        onClose();
+        navigate('/yearbook');
+        return;
+      }
       setTempUser(user);
       setStep(2);
     } catch (err) {

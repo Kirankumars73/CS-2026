@@ -46,10 +46,11 @@ export function AuthProvider({ children }) {
     return unsub;
   }, []);
 
-  // Step 1: Sign in with Google popup
+  // Step 1: Sign in with Google popup. Existing members skip the secret code.
   async function loginWithGoogle() {
     const result = await signInWithPopup(auth, googleProvider);
-    return result.user;
+    const profile = await loadMemberProfile(result.user.uid);
+    return { user: result.user, isMember: !!profile };
   }
 
   // Step 2: Verify secret code and create/update member doc
