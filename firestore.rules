@@ -1,80 +1,75 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // ─── Helper: is the user authenticated ───────────────────────────
-    function isAuth() {
-      return request.auth != null;
+    function isAuth() { return request.auth != null; }
+    function isAdmin() { return isAuth() && request.auth.token.email == 'kirankumar07112003@gmail.com'; }
+    // Signed in AND joined the class with the secret code (has a member profile)
+    function isMember(classId) {
+      return isAuth() && exists(/databases/$(database)/documents/classes/$(classId)/members/$(request.auth.uid));
     }
+    function validText(data) { return data.text is string && data.text.size() > 0 && data.text.size() <= 500; }
 
-    // ─── Class Members ────────────────────────────────────────────────
-    // Anyone can view profiles; only the member themselves can write their own doc
     match /classes/{classId}/members/{memberId} {
       allow read: if true;
       allow write: if isAuth() && request.auth.uid == memberId;
+      allow delete: if isAdmin();   // lets the Admin panel remove members
     }
-
-    // ─── Gallery Photos ───────────────────────────────────────────────
-    // Anyone can view; only logged-in users can upload; only uploader or admin can delete
     match /classes/{classId}/gallery/{photoId} {
       allow read: if true;
-      allow create: if isAuth()
-        && request.resource.data.uploadedById == request.auth.uid
-        && request.resource.data.url is string
-        && request.resource.data.url.size() > 0;
-      allow delete: if isAuth()
-        && (resource.data.uploadedById == request.auth.uid
-            || request.auth.token.email == 'kirankumar07112003@gmail.com');
+      allow create: if isAuth() && request.resource.data.uploadedById == request.auth.uid;
+      allow delete: if isAuth() && (resource.data.uploadedById == request.auth.uid || isAdmin());
       allow update: if false;
     }
-
-    // ─── Events & Festivals ───────────────────────────────────────────
-    // Anyone can view; only logged-in users can post; only poster or admin can delete
     match /classes/{classId}/events/{eventId} {
       allow read: if true;
-      allow create: if isAuth()
-        && request.resource.data.postedById == request.auth.uid
-        && request.resource.data.title is string
-        && request.resource.data.title.size() > 0;
-      allow delete: if isAuth()
-        && (resource.data.postedById == request.auth.uid
-            || request.auth.token.email == 'kirankumar07112003@gmail.com');
+      allow create: if isAuth() && request.resource.data.postedById == request.auth.uid;
+      allow delete: if isAuth() && (resource.data.postedById == request.auth.uid || isAdmin());
       allow update: if false;
     }
-
-    // ─── Wall / Message Wall ─────────────────────────────────────────
-    // Anyone can read; only logged-in users can post; only poster or admin can delete
     match /classes/{classId}/wall/{postId} {
       allow read: if true;
-      allow create: if isAuth()
-        && request.resource.data.authorId == request.auth.uid;
-      allow delete: if isAuth()
-        && (resource.data.authorId == request.auth.uid
-            || request.auth.token.email == 'kirankumar07112003@gmail.com');
+      allow create: if isAuth() && request.resource.data.authorId == request.auth.uid;
+      allow delete: if isAuth() && (resource.data.authorId == request.auth.uid || isAdmin());
       allow update: if false;
     }
 
-    // ─── Yearbook Messages (Private DMs) ─────────────────────────────
-    // Only sender or receiver can read; enforces 1 message per sender-receiver pair via app
+    // Class chat: members only
+    match /classes/{classId}/chat/{msgId} {
+      allow read: if isMember(classId);
+      allow create: if isMember(classId)
+        && request.resource.data.authorId == request.auth.uid
+        && validText(request.resource.data);
+      allow delete: if isAuth() && (resource.data.authorId == request.auth.uid || isAdmin());
+      allow update: if false;
+    }
+
+    // Direct messages: the conversation ID is the two members' UIDs, sorted and joined with "_"
+    match /classes/{classId}/dms/{convId} {
+      function inConversation() {
+        return isMember(classId) && request.auth.uid in convId.split('_');
+      }
+      allow get: if inConversation();   // also works before the conversation exists
+      allow list: if isMember(classId) && request.auth.uid in resource.data.participants;
+      allow create: if inConversation()
+        && request.resource.data.participants.toSet() == convId.split('_').toSet();
+      allow update: if inConversation()
+        && request.resource.data.participants == resource.data.participants;
+      allow delete: if false;
+
+      match /messages/{msgId} {
+        allow read: if inConversation();
+        allow create: if inConversation()
+          && request.resource.data.senderId == request.auth.uid
+          && validText(request.resource.data);
+        allow update, delete: if false;
+      }
+    }
+
     match /yearbook_messages/{msgId} {
-      allow read: if isAuth()
-        && (request.auth.uid == resource.data.senderId
-         || request.auth.uid == resource.data.receiverId);
-
-      allow create: if isAuth()
-        && request.auth.uid == request.resource.data.senderId
-        && request.resource.data.senderId != request.resource.data.receiverId
-        && request.resource.data.text is string
-        && request.resource.data.text.size() > 0
-        && request.resource.data.text.size() <= 500;
-
-      // Messages are permanent — no edits or deletes
+      allow read: if isAuth() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId);
+      allow create: if isAuth() && request.auth.uid == request.resource.data.senderId && request.resource.data.senderId != request.resource.data.receiverId && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 500;
       allow update, delete: if false;
     }
-
-    // ─── Deny everything else ─────────────────────────────────────────
-    match /{document=**} {
-      allow read, write: if false;
-    }
+    match /{document=**} { allow read, write: if false; }
   }
 }

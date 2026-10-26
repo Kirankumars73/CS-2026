@@ -13,16 +13,22 @@ export default function ChatPage() {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
   const bottomRef = useRef(null);
 
   useEffect(() => {
+    // Newest MAX_MESSAGES, shown oldest-first (ascending + limit would freeze on the first 100 ever sent)
     const q = query(
       collection(db, 'classes', CLASS_ID, 'chat'),
-      orderBy('createdAt', 'asc'),
+      orderBy('createdAt', 'desc'),
       limit(MAX_MESSAGES)
     );
     return onSnapshot(q, snap => {
-      setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })).reverse());
+      setError('');
+    }, err => {
+      console.error('Chat failed to load:', err);
+      setError('Couldn’t load the chat. Please refresh, or tell the admin if it keeps happening.');
     });
   }, [CLASS_ID]);
 
@@ -46,6 +52,8 @@ export default function ChatPage() {
       });
     } catch (err) {
       console.error('Send failed:', err);
+      setText(msg);   // put it back so nothing is lost
+      setError('Message not sent. Please try again.');
     } finally {
       setSending(false);
     }
@@ -76,7 +84,8 @@ export default function ChatPage() {
 
       {/* Messages */}
       <div className="chat__messages" id="chat-messages">
-        {messages.length === 0 && (
+        {error && <div className="chat__error" role="alert">{error}</div>}
+        {!error && messages.length === 0 && (
           <div className="chat__empty">
             <HiOutlineChat />
             <p>No messages yet. Be the first to say hi!</p>

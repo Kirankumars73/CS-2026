@@ -28,6 +28,7 @@ export default function DMPage() {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [search, setSearch] = useState('');
+  const [error, setError] = useState('');
   const bottomRef = useRef(null);
 
   // Load all members
@@ -47,6 +48,9 @@ export default function DMPage() {
     );
     return onSnapshot(q, snap => {
       setConversations(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, err => {
+      console.error('DM list failed to load:', err);
+      setError('Couldn’t load your conversations. Please refresh.');
     });
   }, [CLASS_ID, currentUser]);
 
@@ -64,13 +68,17 @@ export default function DMPage() {
   // Listen to messages of active conversation
   useEffect(() => {
     if (!activeConv) { setMessages([]); return; }
+    // Newest MAX_MESSAGES, shown oldest-first
     const q = query(
       collection(db, 'classes', CLASS_ID, 'dms', activeConv.id, 'messages'),
-      orderBy('createdAt', 'asc'),
+      orderBy('createdAt', 'desc'),
       limit(MAX_MESSAGES)
     );
     return onSnapshot(q, snap => {
-      setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })).reverse());
+    }, err => {
+      console.error('DM messages failed to load:', err);
+      setError('Couldn’t load this conversation. Please refresh.');
     });
   }, [activeConv, CLASS_ID]);
 
@@ -124,6 +132,8 @@ export default function DMPage() {
       }, { merge: true });
     } catch (err) {
       console.error('DM send failed:', err);
+      setText(msg);   // put it back so nothing is lost
+      setError('Message not sent. Please try again.');
     } finally {
       setSending(false);
     }
@@ -272,7 +282,8 @@ export default function DMPage() {
 
             {/* Messages */}
             <div className="dm-chatview__messages">
-              {messages.length === 0 && (
+              {error && <div className="chat__error" role="alert">{error}</div>}
+              {!error && messages.length === 0 && (
                 <div className="dm-chatview__empty">
                   <HiOutlineChatAlt2 />
                   <p>No messages yet. Say hello to {activeConv.partnerName}!</p>
@@ -332,6 +343,7 @@ export default function DMPage() {
           </>
         ) : (
           <div className="dm-chatview__placeholder">
+            {error && <div className="chat__error" role="alert">{error}</div>}
             <div className="dm-chatview__placeholder-icon"><HiOutlineChatAlt2 /></div>
             <h3>Select a classmate</h3>
             <p>Choose someone from the list to start a private conversation.</p>

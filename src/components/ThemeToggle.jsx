@@ -1,22 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { HiOutlineMoon, HiOutlineSun } from 'react-icons/hi';
-import { currentTheme, savedTheme, applyTheme } from '../utils/theme';
+import { currentTheme, applyTheme } from '../utils/theme';
 
 export default function ThemeToggle({ className = '' }) {
   const [theme, setTheme] = useState(currentTheme);
-
-  // Until someone picks a theme, keep following the device's light/dark setting
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const onChange = (e) => {
-      if (savedTheme()) return;
-      const next = e.matches ? 'dark' : 'light';
-      applyTheme(next, { save: false });
-      setTheme(next);
-    };
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
-  }, []);
 
   const toggle = () => {
     const next = theme === 'dark' ? 'light' : 'dark';
