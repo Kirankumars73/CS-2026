@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { getRedirectResult, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../firebase';
+import { applyTheme } from '../utils/theme';
 
 const AuthContext = createContext(null);
 
@@ -53,6 +54,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     getRedirectResult(auth)
       .then(async (result) => {
+        if (result) applyTheme('light');   // every login starts in the white theme
         if (result && !(await loadMemberProfile(result.user.uid))) {
           setRedirectSignIn({ user: result.user });
         }
@@ -63,6 +65,7 @@ export function AuthProvider({ children }) {
   // Step 1: Sign in with Google popup. Existing members skip the secret code.
   async function loginWithGoogle() {
     const result = await signInWithPopup(auth, googleProvider);
+    applyTheme('light');   // every login starts in the white theme
     const profile = await loadMemberProfile(result.user.uid);
     return { user: result.user, isMember: !!profile };
   }

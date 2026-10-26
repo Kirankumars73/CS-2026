@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useSyncExternalStore } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { HiOutlineLogout, HiMenu, HiX } from 'react-icons/hi';
 import { useAuth } from '../contexts/AuthContext';
 import LoginModal from './LoginModal';
 import ThemeToggle from './ThemeToggle';
-import { currentTheme, applyTheme } from '../utils/theme';
+import { currentTheme, applyTheme, subscribeTheme } from '../utils/theme';
 import './Navbar.css';
 
 export default function Navbar() {
@@ -12,7 +12,7 @@ export default function Navbar() {
   const [showLogin, setShowLogin] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(() => window.scrollY > 20);
-  const [theme, setTheme] = useState(currentTheme);
+  const theme = useSyncExternalStore(subscribeTheme, currentTheme);
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
@@ -22,11 +22,7 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const toggleTheme = () => {
-    const next = theme === 'dark' ? 'light' : 'dark';
-    applyTheme(next);
-    setTheme(next);
-  };
+  const toggleTheme = () => applyTheme(theme === 'dark' ? 'light' : 'dark');
 
   const handleLogout = async () => {
     setMenuOpen(false);
