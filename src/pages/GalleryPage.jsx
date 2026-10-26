@@ -20,7 +20,40 @@ function getColumnCount() {
   return 4;
 }
 
-// Holds a placeholder box until the photo has loaded, then fades it in
+const srcOf = (photo) => photo.imagekitUrl || photo.url;
+
+// Width ÷ height of a photo, read before it's placed so its frame can be drawn at the exact size.
+// Slow or broken images fall back to 4:3 so one bad photo can't hold up the gallery.
+function measureRatio(src) {
+  return new Promise(resolve => {
+    const img = new Image();
+    const timer = setTimeout(() => done(4 / 3), 8000);
+    function done(ratio) {
+      clearTimeout(timer);
+      img.onload = img.onerror = null;
+      resolve(ratio);
+    }
+    img.onload = () => done(img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : 4 / 3);
+    img.onerror = () => done(4 / 3);
+    img.src = src;
+  });
+}
+
+// Masonry: each photo goes into whichever column is shortest so far. Where a photo lands depends
+// only on the photos before it, so "Load More" never moves photos already on screen, and the
+// columns stay even. Heights are in units of column width (photo = 1 / ratio, plus frame and caption).
+function layoutColumns(photos, columnCount, ratios) {
+  const columns = Array.from({ length: columnCount }, () => ({ photos: [], height: 0 }));
+  for (const photo of photos) {
+    const shortest = columns.reduce((a, b) => (b.height < a.height ? b : a));
+    shortest.photos.push(photo);
+    const hasCaption = photo.caption || (photo.category && photo.category !== 'Other');
+    shortest.height += 1 / ratios[photo.id] + (hasCaption ? 0.2 : 0.08);
+  }
+  return columns.map(c => c.photos);
+}
+
+// Fades the photo in once it has loaded; its frame already has the right size
 function GalleryImage({ src, alt }) {
   const [loaded, setLoaded] = useState(false);
   return (
@@ -50,6 +83,8 @@ export default function GalleryPage() {
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [columnCount, setColumnCount] = useState(getColumnCount);
+  const [ratios, setRatios] = useState({});            // photo id -> width / height
+  const [initialLoading, setInitialLoading] = useState(true);
   const fileRef = useRef();
 
   useEffect(() => {
@@ -80,8 +115,12 @@ export default function GalleryPage() {
       setPhotos(prev => cursorDoc ? [...prev, ...newPhotos] : newPhotos);
       setLastDoc(snap.docs[snap.docs.length - 1] || null);
       setHasMore(snap.docs.length === PAGE_SIZE);
+      // Each photo appears as soon as its shape is known (in order, see `ready` below)
+      newPhotos.forEach(p => measureRatio(srcOf(p)).then(r => setRatios(prev => ({ ...prev, [p.id]: r }))));
     } catch (err) {
       console.error('Failed to fetch gallery:', err);
+    } finally {
+      setInitialLoading(false);
     }
   }, [CLASS_ID]);
 
@@ -99,10 +138,14 @@ export default function GalleryPage() {
   // Client-side filter on the already-fetched photos
   const filtered = category === 'All' ? photos : photos.filter(p => p.category === category);
 
-  // Deal photos into columns left to right. Loading more only adds to the bottom of
-  // each column, so photos already on screen never move (CSS columns rebalanced them).
-  const columns = Array.from({ length: columnCount }, () => []);
-  filtered.forEach((photo, i) => columns[i % columnCount].push(photo));
+  // Show photos in order, up to the first one whose shape isn't known yet
+  const ready = [];
+  for (const photo of filtered) {
+    if (ratios[photo.id] === undefined) break;
+    ready.push(photo);
+  }
+  const waitingForPhotos = ready.length < filtered.length;
+  const columns = layoutColumns(ready, columnCount, ratios);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -144,6 +187,8 @@ export default function GalleryPage() {
       });
       // Optimistically prepend new photo to local state so it's immediately visible
       const newDocSnap = await getDoc(newDocRef);
+      const ratio = await measureRatio(imagekitUrl);
+      setRatios(prev => ({ ...prev, [newDocSnap.id]: ratio }));
       setPhotos(prev => [{ id: newDocSnap.id, ...newDocSnap.data() }, ...prev]);
       setUploadModal(false);
       setUploadFile(null);
@@ -195,7 +240,11 @@ export default function GalleryPage() {
       </div>
 
       {/* Masonry Grid */}
-      {filtered.length === 0 ? (
+      {initialLoading || (filtered.length > 0 && ready.length === 0) ? (
+        <div className="empty-state">
+          <div className="spinner" style={{ width: 36, height: 36 }} />
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state-icon"><HiOutlinePhotograph /></div>
           <h3>No photos yet</h3>
@@ -204,11 +253,11 @@ export default function GalleryPage() {
       ) : (
         <div className="gallery__grid">
           {columns.map((column, c) => (
-            <div key={c} className="gallery__column stagger-children">
+            <div key={c} className="gallery__column">
               {column.map(photo => (
                 <figure key={photo.id} className="gallery-item" onClick={() => setLightbox(photo)}>
-                  <div className="gallery-item__frame">
-                    <GalleryImage src={photo.imagekitUrl || photo.url} alt={photo.caption} />
+                  <div className="gallery-item__frame" style={{ aspectRatio: ratios[photo.id] }}>
+                    <GalleryImage src={srcOf(photo)} alt={photo.caption} />
                   </div>
                   <figcaption className="gallery-item__meta">
                     {photo.caption && <span className="gallery-item__caption">{photo.caption}</span>}
@@ -231,16 +280,16 @@ export default function GalleryPage() {
       )}
 
       {/* Load More Button */}
-      {hasMore && photos.length > 0 && (
+      {hasMore && ready.length > 0 && (
         <div className="gallery__load-more">
           <button
             id="gallery-load-more-btn"
             className="btn btn-ghost gallery__load-more-btn"
             onClick={handleLoadMore}
-            disabled={loadingMore}
+            disabled={loadingMore || waitingForPhotos}
           >
-            {loadingMore ? (
-              <><span className="spinner" /> Loading...</>
+            {loadingMore || waitingForPhotos ? (
+              <><span className="spinner" /> Loading…</>
             ) : (
               <><HiChevronDown className="gallery__load-more-icon" /> Load More Photos</>
             )}
