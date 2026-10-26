@@ -96,6 +96,9 @@
 }
 .gallery-item:hover .gallery-item__delete,
 .gallery-item__delete:focus-visible { opacity: 1; }
+@media (hover: none) {
+  .gallery-item__delete { opacity: 1; width: 36px; height: 36px; }
+}
 
 /* Drop zone */
 .gallery-dropzone {
@@ -116,7 +119,7 @@
   gap: 8px;
 }
 .gallery-dropzone:hover {
-  border-color: var(--navy);
+  border-color: var(--accent-ink);
   background: var(--paper);
 }
 .gallery-dropzone__icon { font-size: 2rem; margin-bottom: 4px; }

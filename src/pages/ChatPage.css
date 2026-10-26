@@ -18,7 +18,7 @@
 }
 .chat__header-icon {
   font-size: 1.6rem;
-  color: var(--navy);
+  color: var(--accent-ink);
 }
 .chat__header-title {
   font-family: var(--font-display);

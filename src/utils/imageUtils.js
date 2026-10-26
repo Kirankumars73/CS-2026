@@ -10,7 +10,9 @@ export function thumbUrl(url, size) {
     return `${url}${url.includes('?') ? '&' : '?'}tr=w-${size},h-${size}`;
   }
   if (url.includes('googleusercontent.com')) {
-    return /=s\d+(-c)?$/.test(url) ? url.replace(/=s\d+(-c)?$/, `=s${size}-c`) : `${url}=s${size}-c`;
+    // -rj = always a still JPEG; some account photos are animated GIFs (4.7 MB at 480px vs 43 KB as JPEG)
+    const sized = `=s${size}-c-rj`;
+    return /=s\d+(-c)?$/.test(url) ? url.replace(/=s\d+(-c)?$/, sized) : `${url}${sized}`;
   }
   return url;
 }

@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   z-index: 1000;
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--nav-bg);
   border-bottom: 1px solid var(--rule);
   transition: background var(--transition-base), border-color var(--transition-base), color var(--transition-base);
 }
@@ -24,6 +24,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  min-height: 44px;
   flex-shrink: 0;
 }
 .navbar__logo-mark {
@@ -78,7 +79,7 @@
 .navbar__actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   margin-left: auto;
 }
 .navbar__admin-link {
@@ -120,8 +121,8 @@
 }
 
 .navbar__icon-btn {
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -130,12 +131,12 @@
   font-size: 1.15rem;
   transition: color var(--transition-fast), background var(--transition-fast);
 }
-.navbar__icon-btn:hover { color: var(--ink); background: rgba(20, 24, 33, 0.06); }
+.navbar__icon-btn:hover { color: var(--ink); background: var(--hover-tint); }
 
 .navbar__burger {
   display: none;
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-md);

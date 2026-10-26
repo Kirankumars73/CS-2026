@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { HiOutlineLogout, HiMenu, HiX } from 'react-icons/hi';
 import { useAuth } from '../contexts/AuthContext';
 import LoginModal from './LoginModal';
+import ThemeToggle from './ThemeToggle';
 import './Navbar.css';
 
 export default function Navbar() {
@@ -64,6 +65,7 @@ export default function Navbar() {
           </ul>
 
           <div className="navbar__actions">
+            <ThemeToggle className="navbar__icon-btn" />
             {currentUser ? (
               <>
                 {isAdmin && (

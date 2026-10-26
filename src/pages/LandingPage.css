@@ -137,7 +137,7 @@
   font-weight: 900;
   font-size: clamp(2.8rem, 6vw, 4rem);
   line-height: 0.9;
-  color: var(--navy);
+  color: var(--accent-ink);
 }
 .numbers__label {
   font-size: 0.8rem;
@@ -178,10 +178,11 @@
 .landing__more {
   display: inline-flex;
   align-items: center;
+  min-height: 44px;
   gap: 6px;
   font-size: 0.9rem;
   font-weight: 700;
-  color: var(--navy);
+  color: var(--accent-ink);
   border-bottom: 1px solid transparent;
   padding-bottom: 2px;
 }

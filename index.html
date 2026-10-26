@@ -7,6 +7,15 @@
     <meta name="theme-color" content="#13223F" />
     <meta name="description" content="The CS 2026 class yearbook: portraits, slam books, signatures and memories of the batch of 2022–26." />
     <title>CS 2026 · Class Yearbook</title>
+    <script>
+      // Pick light or black theme before the first paint: saved choice first, else the device setting
+      (function () {
+        var t = null;
+        try { t = localStorage.getItem('cs26-theme'); } catch (e) {}
+        if (t !== 'light' && t !== 'dark') t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.dataset.theme = t;
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

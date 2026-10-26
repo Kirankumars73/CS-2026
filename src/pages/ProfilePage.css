@@ -3,8 +3,9 @@
 .profile__back {
   display: inline-flex;
   align-items: center;
+  min-height: 44px;
   gap: 6px;
-  margin-bottom: 24px;
+  margin-bottom: 12px;
   font-size: 0.85rem;
   font-weight: 700;
   color: var(--ink-2);
@@ -60,7 +61,7 @@
 .profile__quote {
   max-width: 40ch;
   padding-left: 16px;
-  border-left: 3px solid var(--navy);
+  border-left: 3px solid var(--accent-ink);
   font-size: 1.3rem;
   font-style: italic;
   font-weight: 600;

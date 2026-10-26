@@ -100,8 +100,8 @@
   border-color: var(--rule);
 }
 .dm-contact--active {
-  background: #E9EDF5 !important;
-  border-color: #CBD3E3 !important;
+  background: var(--accent-soft) !important;
+  border-color: var(--accent-soft-border) !important;
 }
 
 .dm-contact__avatar {
@@ -295,4 +295,9 @@
   .dm-chatview__input-bar {
     padding: 10px 16px;
   }
+}
+
+/* Touch screens: 16px so iPhones don't zoom into the search box */
+@media (max-width: 820px), (pointer: coarse) {
+  .dm-sidebar__search-input { font-size: 16px !important; }
 }

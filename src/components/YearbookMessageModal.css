@@ -2,7 +2,7 @@
   position: fixed;
   inset: 0;
   z-index: 2000;
-  background: rgba(20, 24, 33, 0.55);
+  background: var(--overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -41,8 +41,8 @@
 }
 .ymm-close {
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -50,7 +50,7 @@
   color: var(--ink-3);
   font-size: 1.1rem;
 }
-.ymm-close:hover { color: var(--ink); background: rgba(20, 24, 33, 0.06); }
+.ymm-close:hover { color: var(--ink); background: var(--hover-tint); }
 
 .ymm-subtitle {
   margin: 10px 0 18px;
@@ -71,11 +71,11 @@
   font-size: 1.65rem;
   line-height: 34px;
   background-color: var(--surface);
-  background-image: repeating-linear-gradient(transparent 0 33px, #E4E8F0 33px 34px);
+  background-image: repeating-linear-gradient(transparent 0 33px, var(--ruled) 33px 34px);
   background-attachment: local;
 }
-.ymm-textarea::placeholder { color: rgba(29, 78, 216, 0.4); }
-.ymm-textarea:focus-visible { outline: 2px solid rgba(29, 78, 216, 0.35); outline-offset: 4px; }
+.ymm-textarea::placeholder { color: var(--pen-faint); }
+.ymm-textarea:focus-visible { outline: 2px solid var(--pen-faint); outline-offset: 4px; }
 
 .ymm-footer {
   display: flex;

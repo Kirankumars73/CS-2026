@@ -13,10 +13,13 @@
   flex-wrap: wrap;
 }
 .site-footer__mark {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   font-family: var(--font-display);
   font-weight: 900;
   font-size: 1.1rem;
-  color: var(--navy);
+  color: var(--accent-ink);
 }
 .site-footer__line {
   font-size: 0.82rem;

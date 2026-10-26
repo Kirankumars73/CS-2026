@@ -2,7 +2,7 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(20, 24, 33, 0.55);
+  background: var(--overlay);
   z-index: 2000;
   display: flex;
   align-items: center;
@@ -40,7 +40,7 @@
   transition: color var(--transition-fast), background var(--transition-fast);
   z-index: 1;
 }
-.modal-close:hover { color: var(--ink); background: rgba(20, 24, 33, 0.06); }
+.modal-close:hover { color: var(--ink); background: var(--hover-tint); }
 
 /* Header */
 .modal-header {
@@ -121,9 +121,9 @@
   gap: 10px;
   padding: 11px 14px;
   margin-bottom: 18px;
-  background: #FBEFF1;
+  background: var(--danger-soft);
   border-left: 3px solid var(--danger);
-  color: #8E1B2D;
+  color: var(--danger-ink);
   font-size: 0.86rem;
   font-weight: 600;
   line-height: 1.45;
@@ -166,7 +166,7 @@
   min-height: 50px;
   transition: border-color var(--transition-fast), background var(--transition-fast);
 }
-.google-btn:hover:not(:disabled) { border-color: var(--ink); background: #FAFBFC; }
+.google-btn:hover:not(:disabled) { border-color: var(--ink); background: var(--surface-hover); }
 .google-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .google-icon { font-size: 1.3rem; }
 
