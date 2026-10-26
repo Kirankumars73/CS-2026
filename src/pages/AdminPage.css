@@ -25,10 +25,7 @@
   font-family: var(--font-display);
   font-size: 2rem;
   font-weight: 900;
-  background: linear-gradient(135deg, var(--accent-gold), var(--accent-violet));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--navy);
   line-height: 1;
 }
 .admin-stat__label {

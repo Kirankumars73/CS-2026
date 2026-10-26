@@ -15,7 +15,8 @@ function signInErrorMessage(err) {
   return err.message || 'Google sign-in failed. Please try again.';
 }
 
-export default function LoginModal({ onClose }) {
+// stayOnPage: returning members stay where they are (e.g. on the profile they wanted to sign)
+export default function LoginModal({ onClose, stayOnPage = false }) {
   const { loginWithGoogle, loginWithGoogleRedirect, verifyAndJoin, redirectSignIn } = useAuth();
   // Back from a full-page Google sign-in: pick up at the secret code step
   const [step, setStep] = useState(redirectSignIn?.user ? 2 : 1); // 1 = google, 2 = secret code
@@ -47,7 +48,7 @@ export default function LoginModal({ onClose }) {
       const { user, isMember } = await loginWithGoogle();
       if (isMember) {
         onClose();
-        navigate('/yearbook');
+        if (!stayOnPage) navigate('/yearbook');
         return;
       }
       setTempUser(user);
@@ -81,7 +82,7 @@ export default function LoginModal({ onClose }) {
       onClose();
       if (isNewMember) {
         navigate('/edit-profile');
-      } else {
+      } else if (!stayOnPage) {
         navigate('/yearbook');
       }
     } catch (err) {
@@ -101,8 +102,8 @@ export default function LoginModal({ onClose }) {
 
         {/* Header */}
         <div className="modal-header">
-          <div className="modal-logo">◈</div>
-          <h2 className="modal-title">Welcome to CS 2026</h2>
+          <div className="modal-logo">CS’26</div>
+          <h2 className="modal-title">Open the yearbook</h2>
           <p className="modal-subtitle">
             {step === 1
               ? 'Sign in with your Google account to join the yearbook'
@@ -126,7 +127,7 @@ export default function LoginModal({ onClose }) {
         {/* Error */}
         {error && (
           <div className="modal-error">
-            <span>⚠️</span> {error}
+            <span className="modal-error__mark">!</span> {error}
           </div>
         )}
 

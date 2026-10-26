@@ -274,7 +274,7 @@ export default function DMPage() {
             <div className="dm-chatview__messages">
               {messages.length === 0 && (
                 <div className="dm-chatview__empty">
-                  <span>💬</span>
+                  <HiOutlineChatAlt2 />
                   <p>No messages yet. Say hello to {activeConv.partnerName}!</p>
                 </div>
               )}
@@ -332,7 +332,7 @@ export default function DMPage() {
           </>
         ) : (
           <div className="dm-chatview__placeholder">
-            <div className="dm-chatview__placeholder-icon">💬</div>
+            <div className="dm-chatview__placeholder-icon"><HiOutlineChatAlt2 /></div>
             <h3>Select a classmate</h3>
             <p>Choose someone from the list to start a private conversation.</p>
           </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { collection, addDoc, query, orderBy, deleteDoc, doc, serverTimestamp, getDocs, limit, startAfter } from 'firebase/firestore';
-import { HiX, HiOutlinePhotograph, HiOutlinePlus, HiChevronDown } from 'react-icons/hi';
+import { HiX, HiOutlinePhotograph, HiOutlinePlus, HiChevronDown, HiOutlineCalendar } from 'react-icons/hi';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { compressImage, uploadToImageKitOnly } from '../utils/imageUtils';
@@ -8,10 +8,6 @@ import EventCard from '../components/ui/event-card';
 import './EventsPage.css';
 
 const CATEGORIES = ['All', 'Farewell', 'Festival', 'Trip', 'Sports', 'Cultural', 'Classroom', 'Other'];
-const CATEGORY_ICONS = {
-  Farewell: '🎓', Festival: '🎉', Trip: '🗺️', Sports: '🏆',
-  Cultural: '🎭', Classroom: '📚', Other: '✨', All: '🌟',
-};
 
 const PAGE_SIZE = 10;
 
@@ -172,9 +168,9 @@ export default function EventsPage() {
   return (
     <div className="page-wrapper">
       <div className="page-header">
-        <p className="section-label">Our Journey Together</p>
-        <h1>Events & Festivals</h1>
-        <p>Relive the moments that made CS 2026 unforgettable — farewells, festivals, trips, and more.</p>
+        <p className="section-label">Our journey together</p>
+        <h1>Events</h1>
+        <p>Farewells, festivals, trips and everything in between: the days that made CS 2026.</p>
       </div>
 
       {/* Controls */}
@@ -182,13 +178,13 @@ export default function EventsPage() {
         <div className="filter-chips">
           {CATEGORIES.map(c => (
             <button key={c} className={`chip ${category === c ? 'active' : ''}`} onClick={() => setCategory(c)}>
-              {CATEGORY_ICONS[c]} {c}
+              {c}
             </button>
           ))}
         </div>
         {currentUser && (
           <button id="post-event-btn" className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>
-            + Post Event
+            <HiOutlinePlus /> Post an event
           </button>
         )}
       </div>
@@ -196,17 +192,17 @@ export default function EventsPage() {
       {/* Events List */}
       {filtered.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-state-icon">🎉</div>
+          <div className="empty-state-icon"><HiOutlineCalendar /></div>
           <h3>No events yet</h3>
-          <p>{currentUser ? 'Post the first event!' : 'Login to post events.'}</p>
+          <p>{currentUser ? 'Post the first one: a fest, a trip, the farewell.' : 'Log in to post the first event.'}</p>
         </div>
       ) : (
-        <div className="events__grid w-full">
+        <div className="events__list stagger-children">
           {filtered.map((event, index) => (
-            <div key={event.id} className="relative group w-full">
+            <div key={event.id} className="events__item">
               {isAdmin && (
                 <button
-                  className="absolute top-4 right-4 z-[100] btn-danger btn btn-sm bg-black/50 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="btn btn-danger btn-sm events__delete"
                   onClick={() => handleDelete(event.id)}
                   title="Delete event"
                 >
@@ -240,14 +236,14 @@ export default function EventsPage() {
       {/* Post Event Modal */}
       {showForm && (
         <div className="modal-overlay" style={{ zIndex: 1000 }} onClick={e => e.target === e.currentTarget && setShowForm(false)}>
-          <div className="login-modal events-modal" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
+          <div className="login-modal events-modal">
             <button className="modal-close" onClick={() => setShowForm(false)}><HiX /></button>
             <div className="modal-header">
-              <div className="modal-logo">🎉</div>
-              <h2 className="modal-title">Post an Event</h2>
+              <div className="modal-logo">Events</div>
+              <h2 className="modal-title">Post an event</h2>
               <p className="modal-subtitle">Share a memory with your classmates</p>
             </div>
-            {error && <div className="modal-error"><span>⚠️</span> {error}</div>}
+            {error && <div className="modal-error"><span className="modal-error__mark">!</span> {error}</div>}
             <form className="modal-body" onSubmit={handleSubmit}>
               <input
                 id="event-title-input"
@@ -265,7 +261,7 @@ export default function EventsPage() {
                   onChange={e => handleFormChange('category', e.target.value)}
                 >
                   {CATEGORIES.filter(c => c !== 'All').map(c => (
-                    <option key={c} value={c}>{CATEGORY_ICONS[c]} {c}</option>
+                    <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
                 <input
@@ -285,29 +281,29 @@ export default function EventsPage() {
               />
               
               {/* Cover Photo */}
-              <label className="events-modal__photo-label bg-black/20 border border-white/10 p-3 rounded-lg flex items-center justify-center gap-2 cursor-pointer hover:bg-black/30 transition">
+              <label className="events-modal__photo-label">
                 <HiOutlinePhotograph />
-                {form.photoPreview ? 'Change Cover Photo' : 'Add Cover Photo*'}
+                {form.photoPreview ? 'Change cover photo' : 'Add cover photo *'}
                 <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoChange} required={!form.photoPreview} />
               </label>
               {form.photoPreview && (
-                <img src={form.photoPreview} alt="preview" className="events-modal__photo-preview rounded-lg object-cover h-32 w-full" />
+                <img src={form.photoPreview} alt="preview" className="events-modal__photo-preview" />
               )}
               
               {/* Additional Photos */}
-              <div className="mt-4">
-                <label className="events-modal__photo-label bg-black/20 border border-white/10 p-3 rounded-lg flex items-center justify-center gap-2 cursor-pointer hover:bg-black/30 transition">
+              <div>
+                <label className="events-modal__photo-label">
                   <HiOutlinePlus />
-                  Add Additional Photos (Gallery)
+                  Add more photos (optional)
                   <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleAdditionalPhotosChange} />
                 </label>
                 
                 {form.additionalPreviews.length > 0 && (
-                  <div className="grid grid-cols-4 gap-2 mt-2">
+                  <div className="events-modal__thumbs">
                     {form.additionalPreviews.map((preview, idx) => (
-                      <div key={idx} className="relative group rounded-md overflow-hidden aspect-square">
-                        <img src={preview} alt="gallery preview" className="w-full h-full object-cover" />
-                        <button type="button" onClick={() => removeAdditionalPhoto(idx)} className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white opacity-0 group-hover:opacity-100 transition">
+                      <div key={idx} className="events-modal__thumb">
+                        <img src={preview} alt="gallery preview" />
+                        <button type="button" onClick={() => removeAdditionalPhoto(idx)} className="events-modal__thumb-remove" aria-label="Remove photo">
                           <HiX size={12} />
                         </button>
                       </div>
@@ -316,8 +312,8 @@ export default function EventsPage() {
                 )}
               </div>
 
-              <button id="submit-event-btn" type="submit" className="btn btn-primary mt-2" style={{ width: '100%' }} disabled={uploading}>
-                {uploading ? <><span className="spinner" /> Posting...</> : '🎉 Post Event'}
+              <button id="submit-event-btn" type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={uploading}>
+                {uploading ? <><span className="spinner" /> Posting…</> : 'Post event'}
               </button>
             </form>
           </div>
@@ -326,25 +322,22 @@ export default function EventsPage() {
 
       {/* Gallery Modal */}
       {viewingEvent && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/95 backdrop-blur-xl p-4 md:p-12 overflow-y-auto" onClick={e => e.target === e.currentTarget && setViewingEvent(null)}>
-          <button className="fixed top-6 right-6 z-[10001] text-zinc-400 bg-white/5 p-3 rounded-full hover:bg-white/10 hover:text-white transition" onClick={() => setViewingEvent(null)}>
-            <HiX size={26} />
+        <div className="event-viewer" onClick={e => e.target === e.currentTarget && setViewingEvent(null)}>
+          <button className="event-viewer__close" onClick={() => setViewingEvent(null)} aria-label="Close">
+            <HiX />
           </button>
-          <div className="w-full max-w-6xl my-auto flex flex-col items-center animate-fadeIn">
-            <div className="text-center mb-10 w-full">
-              <h2 className="text-3xl font-light text-white tracking-tight">{viewingEvent.title}</h2>
-              <p className="text-zinc-500 tracking-widest uppercase text-sm mt-3">
-                {(viewingEvent.additionalPhotoURLsImageKit || viewingEvent.additionalPhotoURLs)?.length} Gallery Photos
+          <div className="event-viewer__inner">
+            <div className="event-viewer__head">
+              <h2 className="event-viewer__title">{viewingEvent.title}</h2>
+              <p className="event-viewer__count">
+                {(viewingEvent.additionalPhotoURLsImageKit || viewingEvent.additionalPhotoURLs)?.length} photos
               </p>
             </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+
+            <div className="event-viewer__grid">
               {/* Use ImageKit URLs if available, otherwise fall back to Firebase URLs */}
               {(viewingEvent.additionalPhotoURLsImageKit || viewingEvent.additionalPhotoURLs)?.map((url, i) => (
-                <div key={i} className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl bg-zinc-900 border border-white/5 relative group">
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent z-10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <img src={url} alt={`Gallery ${i+1}`} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                </div>
+                <img key={i} src={url} alt={`${viewingEvent.title} ${i + 1}`} loading="lazy" />
               ))}
             </div>
           </div>

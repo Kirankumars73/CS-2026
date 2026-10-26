@@ -1,7 +1,9 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 
 import LandingPage    from './pages/LandingPage';
 import YearbookPage   from './pages/YearbookPage';
@@ -14,7 +16,17 @@ import DMPage         from './pages/DMPage';
 import EditProfilePage from './pages/EditProfilePage';
 import AdminPage      from './pages/AdminPage';
 
+// Chat screens fill the viewport, so they get no footer
+const NO_FOOTER = ['/chat', '/dm'];
+
 function AppRoutes() {
+  const { pathname, hash } = useLocation();
+
+  // Open each page at the top, like turning to a new page (links to a #section scroll themselves)
+  useEffect(() => {
+    if (!hash) window.scrollTo(0, 0);
+  }, [pathname, hash]);
+
   return (
     <>
       <Navbar />
@@ -45,12 +57,16 @@ function AppRoutes() {
 
         {/* 404 */}
         <Route path="*" element={
-          <div className="page-wrapper" style={{ textAlign: 'center', paddingTop: 140 }}>
-            <h1 style={{ fontSize: '4rem', marginBottom: 16 }}>404</h1>
-            <p style={{ color: 'var(--text-secondary)' }}>Page not found.</p>
+          <div className="page-wrapper">
+            <div className="page-header">
+              <p className="section-label">Page 404</p>
+              <h1>This page was torn out</h1>
+              <p>The page you're looking for isn't in the yearbook.</p>
+            </div>
           </div>
         } />
       </Routes>
+      {!NO_FOOTER.includes(pathname) && <Footer />}
     </>
   );
 }

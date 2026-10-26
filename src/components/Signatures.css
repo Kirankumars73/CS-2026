@@ -1,0 +1,58 @@
+/* Static list, so CSS columns are fine here (nothing is appended later) */
+.signatures {
+  columns: 2;
+  column-gap: 18px;
+}
+
+.signature {
+  break-inside: avoid;
+  margin-bottom: 18px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  padding: 20px 22px 16px;
+}
+.signature__text {
+  font-size: 1.55rem;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.signature__by {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--rule-strong);
+}
+.signature__avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.signature__avatar--initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--navy);
+  color: #FFFFFF;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.72rem;
+}
+.signature__name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.signature__date {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .signatures { columns: 1; }
+}

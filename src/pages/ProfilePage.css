@@ -1,166 +1,155 @@
-.profile-page {
-  max-width: 720px;
-}
+.profile-page { max-width: 1080px; }
 
 .profile__back {
-  margin-bottom: 24px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  margin-bottom: 24px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.profile__back:hover { color: var(--ink); }
+
+/* A yearbook page: the portrait as a print, the name set big beside it */
+.profile {
+  display: grid;
+  grid-template-columns: minmax(240px, 340px) 1fr;
+  gap: 48px;
+  align-items: start;
+  padding-bottom: 36px;
+  border-bottom: 3px solid var(--ink);
 }
 
-.profile__card {
-  border-radius: var(--radius-2xl);
-  overflow: hidden;
+.profile__portrait {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  box-shadow: var(--shadow-md);
+  padding: 12px 12px 14px;
 }
-
-/* Cover */
-.profile__cover {
-  position: relative;
-  height: 160px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: flex-start;
-  padding: 0 32px;
-}
-.profile__cover-bg {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg,
-    rgba(139, 92, 246, 0.3),
-    rgba(212, 168, 67, 0.2),
-    rgba(20, 184, 166, 0.2));
-  animation: liquidShift 12s ease-in-out infinite;
-}
-.profile__cover::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom, transparent 50%, rgba(17,17,24,0.8));
-}
-
-.profile__avatar-wrap {
-  position: relative;
-  z-index: 1;
-  transform: translateY(60px);
-}
-.profile__avatar {
-  width: 110px;
-  height: 110px;
-  border-radius: 50%;
+.profile__portrait img,
+.profile__initials {
+  width: 100%;
+  aspect-ratio: 4 / 5;
   object-fit: cover;
-  border: 4px solid var(--bg-elevated);
-  box-shadow: var(--shadow-lg), var(--shadow-gold);
+  background: var(--bg-secondary);
 }
-.profile__avatar.avatar-placeholder {
-  width: 110px;
-  height: 110px;
-  font-size: 2.5rem;
-  border: 4px solid var(--bg-elevated);
-  box-shadow: var(--shadow-lg);
-}
-
-/* Body */
-.profile__body {
-  padding: 80px 32px 36px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.profile__name-row {
+.profile__initials {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.profile__name {
+  justify-content: center;
   font-family: var(--font-display);
-  font-size: clamp(1.5rem, 4vw, 2rem);
-  font-weight: 800;
-  background: linear-gradient(135deg, var(--text-primary) 60%, var(--accent-gold));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-weight: 900;
+  font-size: 5rem;
+  color: var(--ink-3);
 }
 
-.profile__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+.profile__main { padding-top: 6px; min-width: 0; }
+
+.profile__name {
+  margin: 10px 0 20px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(3rem, 8vw, 5.4rem);
+  line-height: 0.9;
+  text-transform: uppercase;
+  color: var(--ink);
+  overflow-wrap: anywhere;
 }
 
 .profile__quote {
-  font-size: 1.05rem;
-  color: var(--text-secondary);
-  font-style: italic;
-  border-left: 3px solid var(--accent-gold);
+  max-width: 40ch;
   padding-left: 16px;
-  margin: 0;
-  line-height: 1.6;
+  border-left: 3px solid var(--navy);
+  font-size: 1.3rem;
+  font-style: italic;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--ink);
+  overflow-wrap: anywhere;
 }
 
-.profile__section-title {
-  font-family: var(--font-display);
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--accent-gold);
-  margin-bottom: 8px;
-}
 .profile__bio {
-  color: var(--text-secondary);
-  line-height: 1.7;
-  font-size: 0.95rem;
+  margin-top: 18px;
+  max-width: 62ch;
+  color: var(--ink-2);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
 }
 
 .profile__actions {
   display: flex;
-  gap: 12px;
   flex-wrap: wrap;
-  padding-top: 8px;
-  border-top: 1px solid var(--glass-border);
-  margin-top: 4px;
-}
-.profile__actions .btn {
-  display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
+  margin-top: 28px;
 }
-
-/* ── Message sent pill ── */
-.profile__msg-sent {
+.profile__signed {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 18px;
-  border-radius: var(--radius-full);
-  background: rgba(212, 168, 67, 0.08);
-  border: 1px solid rgba(212, 168, 67, 0.2);
-  color: var(--accent-gold);
-  font-size: 0.88rem;
-  font-weight: 500;
+  padding: 10px 0;
+  font-weight: 700;
+  color: var(--success);
 }
 
-/* ── Inbox empty ── */
-.profile__inbox-empty {
+/* Sections below the page */
+.profile__section { margin-top: 44px; }
+.profile__section-head {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 28px 16px;
-  color: var(--text-muted);
-  font-size: 0.88rem;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: 16px;
+}
+.profile__section-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 2.2rem;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.profile__count {
+  min-width: 28px;
+  padding: 3px 8px 2px;
+  border-radius: var(--radius-sm);
+  background: var(--navy);
+  color: #FFFFFF;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1rem;
   text-align: center;
 }
-
-.profile__inbox-empty span {
-  font-size: 2rem;
-  opacity: 0.5;
+.profile__private {
+  margin-left: auto;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-3);
 }
 
-@media (max-width: 480px) {
-  .profile__body { padding: 76px 20px 28px; }
-  .profile__cover { padding: 0 20px; }
+.profile__empty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  padding: 20px 22px;
+  background: var(--surface);
+  border: 1px dashed var(--rule-strong);
+  color: var(--ink-2);
+}
+.profile__empty-line {
+  color: var(--ink-3);
+  font-style: italic;
+}
+
+@media (max-width: 760px) {
+  .profile {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .profile__portrait { max-width: 300px; }
+  .profile__name { margin-bottom: 16px; }
+  .profile__private { margin-left: 0; width: 100%; }
 }

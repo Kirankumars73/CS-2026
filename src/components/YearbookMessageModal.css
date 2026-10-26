@@ -1,37 +1,26 @@
-/* ─────────────────────────────────────
-   Yearbook Message Modal
-───────────────────────────────────── */
 .ymm-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  z-index: 2000;
+  background: rgba(20, 24, 33, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9000;
-  padding: 20px;
+  padding: 24px;
   animation: fadeIn 0.2s ease;
 }
 
 .ymm-modal {
   width: 100%;
-  max-width: 520px;
-  border-radius: var(--radius-xl) !important;
-  padding: 0;
-  overflow: hidden;
-  animation: scaleIn 0.3s var(--transition-spring);
-  /* Enhanced glassmorphism */
-  background: rgba(17, 17, 28, 0.5) !important;
-  border: 1px solid rgba(212, 168, 67, 0.18) !important;
-  backdrop-filter: blur(40px) saturate(200%) !important;
-  -webkit-backdrop-filter: blur(40px) saturate(200%) !important;
-  box-shadow:
-    0 32px 80px rgba(0, 0, 0, 0.7),
-    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
-    0 1px 0 rgba(255, 255, 255, 0.08) inset,
-    0 0 60px rgba(212, 168, 67, 0.06) !important;
+  max-width: 560px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  background: var(--surface);
+  border-top: 6px solid var(--navy);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 28px 28px 22px;
+  animation: scaleIn 0.2s ease;
 }
 
 .ymm-header {
@@ -39,77 +28,71 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  padding: 26px 28px 20px;
 }
-
-.ymm-label {
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--accent-gold);
-  display: block;
-  margin-bottom: 6px;
-}
-
 .ymm-title {
+  margin-top: 4px;
   font-family: var(--font-display);
-  font-size: 1.35rem;
-  font-weight: 800;
-  color: var(--text-primary);
-  margin: 0 0 4px;
+  font-weight: 900;
+  font-size: 2.2rem;
+  line-height: 0.95;
+  text-transform: uppercase;
+  color: var(--ink);
+  overflow-wrap: anywhere;
 }
-
-.ymm-subtitle {
-  font-size: 0.82rem;
-  color: var(--text-muted);
-  margin: 0;
-}
-
 .ymm-close {
   flex-shrink: 0;
-  border-radius: var(--radius-md) !important;
-  padding: 8px !important;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  color: var(--ink-3);
+  font-size: 1.1rem;
+}
+.ymm-close:hover { color: var(--ink); background: rgba(20, 24, 33, 0.06); }
+
+.ymm-subtitle {
+  margin: 10px 0 18px;
+  font-size: 0.88rem;
+  color: var(--ink-2);
 }
 
-.ymm-divider {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(212, 168, 67, 0.15), transparent);
-  margin: 0 28px;
-}
-
-.ymm-body {
-  padding: 22px 28px 6px;
-}
-
+/* Write straight onto a ruled yearbook page */
 .ymm-textarea {
-  resize: none !important;
-  min-height: 140px;
-  font-size: 0.95rem;
-  line-height: 1.7;
-  border-radius: var(--radius-md) !important;
-  background: rgba(255, 255, 255, 0.04) !important;
-  border-color: rgba(212, 168, 67, 0.12) !important;
+  display: block;
+  width: 100%;
+  min-height: 238px;
+  resize: vertical;
+  padding: 2px 4px;
+  border: none;
+  border-top: 1px solid var(--rule);
+  outline: none;
+  font-size: 1.65rem;
+  line-height: 34px;
+  background-color: var(--surface);
+  background-image: repeating-linear-gradient(transparent 0 33px, #E4E8F0 33px 34px);
+  background-attachment: local;
 }
-
-.ymm-textarea:focus {
-  border-color: rgba(212, 168, 67, 0.4) !important;
-  background: rgba(255, 255, 255, 0.06) !important;
-  box-shadow: 0 0 0 3px rgba(212, 168, 67, 0.1) !important;
-}
-
-.ymm-char-count {
-  font-size: 0.75rem;
-  text-align: right;
-  margin-top: 6px;
-  font-variant-numeric: tabular-nums;
-  transition: color 0.2s;
-}
+.ymm-textarea::placeholder { color: rgba(29, 78, 216, 0.4); }
+.ymm-textarea:focus-visible { outline: 2px solid rgba(29, 78, 216, 0.35); outline-offset: 4px; }
 
 .ymm-footer {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 20px 28px 28px;
+  gap: 10px;
+  margin-top: 16px;
+}
+.ymm-char-count {
+  margin-right: auto;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.ymm-char-count--full { color: var(--danger); }
+
+@media (max-width: 480px) {
+  .ymm-overlay { padding: 12px; align-items: flex-end; }
+  .ymm-modal { padding: 22px 18px 18px; }
+  .ymm-title { font-size: 1.8rem; }
 }

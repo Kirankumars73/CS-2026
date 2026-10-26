@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { collection, onSnapshot, query } from 'firebase/firestore';
-import { HiOutlineSearch, HiOutlinePencil } from 'react-icons/hi';
+import { HiOutlineSearch, HiOutlinePencil, HiOutlineUserGroup } from 'react-icons/hi';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
+import LoginModal from '../components/LoginModal';
+import { portraitUrl } from '../utils/imageUtils';
 import './YearbookPage.css';
 
 export default function YearbookPage() {
-  const { currentUser, isAdmin, CLASS_ID } = useAuth();
+  const { currentUser, CLASS_ID } = useAuth();
   const [members, setMembers] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showLogin, setShowLogin] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -43,9 +46,12 @@ export default function YearbookPage() {
   return (
     <div className="page-wrapper">
       <div className="page-header">
-        <p className="section-label">Class of 2022–26</p>
-        <h1>Our Yearbook</h1>
-        <p>Meet the brilliant minds of CS 2026 — 67 classmates, one family.</p>
+        <p className="section-label">Portrait pages · Class of 2022–26</p>
+        <h1>The Class</h1>
+        <p>
+          {members.length || 67} classmates, in roll-number order. Open anyone’s page to read their slam book
+          and sign their yearbook.
+        </p>
       </div>
 
       {/* Controls */}
@@ -56,72 +62,59 @@ export default function YearbookPage() {
             id="yearbook-search"
             type="text"
             className="input-glass yearbook__search-input"
-            placeholder="Search by name or roll number..."
+            placeholder="Search by name or roll number"
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
         </div>
+        {!currentUser && (
+          <div className="yearbook__login-hint">
+            <span>Log in to add your portrait and sign yearbooks.</span>
+            <button className="btn btn-glass btn-sm" onClick={() => setShowLogin(true)}>Log in</button>
+          </div>
+        )}
       </div>
-
-      {/* Not logged in hint */}
-      {!currentUser && (
-        <div className="yearbook__login-hint glass-card">
-          🔑 <span>Login to add your profile and edit your information</span>
-        </div>
-      )}
 
       {/* Grid */}
       {loading ? (
         <div className="empty-state">
-          <div className="spinner" style={{ width: 40, height: 40 }}></div>
+          <div className="spinner" style={{ width: 36, height: 36 }}></div>
         </div>
       ) : sorted.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-state-icon">🎓</div>
-          <h3>{search ? 'No members match this filter' : 'No profiles yet'}</h3>
-          <p>{search ? 'Try adjusting your search' : 'Be the first to create your yearbook profile!'}</p>
+          <div className="empty-state-icon"><HiOutlineUserGroup /></div>
+          <h3>{search ? 'Nobody by that name' : 'No portraits yet'}</h3>
+          <p>{search ? 'Try a different name or roll number.' : 'Be the first to add your yearbook portrait.'}</p>
         </div>
       ) : (
-        <div className="yearbook__grid stagger-children">
+        <div className="yearbook__grid">
           {sorted.map(member => (
-            <Link key={member.id} to={`/profile/${member.id}`} className="member-card clay-card">
-              {/* Roll Number Badge */}
-              {member.rollNumber && (
-                <div className="member-card__roll-badge">#{member.rollNumber}</div>
-              )}
-              {/* Photo */}
-              <div className="member-card__photo-wrap">
+            <Link key={member.id} to={`/profile/${member.id}`} className="portrait">
+              <div className="portrait__photo">
                 {(member.profilePhotoImageKit || member.profilePhoto) ? (
-                  <img src={member.profilePhotoImageKit || member.profilePhoto} alt={member.name} className="member-card__photo" />
+                  <img src={portraitUrl(member.profilePhotoImageKit || member.profilePhoto)} alt={member.name} loading="lazy" />
                 ) : (
-                  <div className="member-card__photo avatar-placeholder">
-                    {getInitials(member.name)}
-                  </div>
+                  <div className="portrait__initials">{getInitials(member.name)}</div>
                 )}
                 {currentUser && currentUser.uid === member.id && (
                   <button
-                    className="member-card__edit-btn"
+                    className="portrait__edit"
                     onClick={e => { e.preventDefault(); navigate('/edit-profile'); }}
-                    title="Edit Profile"
+                    title="Edit your profile"
                   >
                     <HiOutlinePencil />
                   </button>
                 )}
               </div>
-              {/* Info */}
-              <div className="member-card__info">
-                <h3 className="member-card__name">{member.name || 'Unnamed'}</h3>
-                {member.rollNumber && (
-                  <p className="member-card__roll">Roll #{member.rollNumber}</p>
-                )}
-                {member.quote && (
-                  <p className="member-card__quote">"{member.quote}"</p>
-                )}
-              </div>
+              {member.rollNumber && <p className="portrait__no">No. {member.rollNumber}</p>}
+              <h3 className="portrait__name">{member.name || 'Unnamed'}</h3>
+              {member.quote && <p className="portrait__quote">“{member.quote}”</p>}
             </Link>
           ))}
         </div>
       )}
+
+      {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { collection, addDoc, query, orderBy, deleteDoc, doc, serverTimestamp, getDocs, limit, startAfter, getDoc } from 'firebase/firestore';
-import { HiOutlineUpload, HiX, HiOutlineZoomIn, HiChevronLeft, HiChevronRight, HiChevronDown } from 'react-icons/hi';
+import { HiOutlineUpload, HiX, HiChevronLeft, HiChevronRight, HiChevronDown, HiOutlinePhotograph } from 'react-icons/hi';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { compressImage } from '../utils/imageUtils';
@@ -197,7 +197,7 @@ export default function GalleryPage() {
       {/* Masonry Grid */}
       {filtered.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-state-icon">📷</div>
+          <div className="empty-state-icon"><HiOutlinePhotograph /></div>
           <h3>No photos yet</h3>
           <p>{currentUser ? 'Upload the first photo to get started!' : 'Login to upload photos.'}</p>
         </div>
@@ -206,13 +206,14 @@ export default function GalleryPage() {
           {columns.map((column, c) => (
             <div key={c} className="gallery__column stagger-children">
               {column.map(photo => (
-                <div key={photo.id} className="gallery-item clay-card" onClick={() => setLightbox(photo)}>
-                  <GalleryImage src={photo.imagekitUrl || photo.url} alt={photo.caption} />
-                  <div className="gallery-item__overlay">
-                    <HiOutlineZoomIn className="gallery-item__zoom" />
-                    {photo.caption && <p className="gallery-item__caption">{photo.caption}</p>}
-                    <span className="badge badge-gold gallery-item__cat">{photo.category}</span>
+                <figure key={photo.id} className="gallery-item" onClick={() => setLightbox(photo)}>
+                  <div className="gallery-item__frame">
+                    <GalleryImage src={photo.imagekitUrl || photo.url} alt={photo.caption} />
                   </div>
+                  <figcaption className="gallery-item__meta">
+                    {photo.caption && <span className="gallery-item__caption">{photo.caption}</span>}
+                    {photo.category && photo.category !== 'Other' && <span className="gallery-item__cat">{photo.category}</span>}
+                  </figcaption>
                   {isAdmin && (
                     <button
                       className="gallery-item__delete"
@@ -222,7 +223,7 @@ export default function GalleryPage() {
                       <HiX />
                     </button>
                   )}
-                </div>
+                </figure>
               ))}
             </div>
           ))}
@@ -253,10 +254,10 @@ export default function GalleryPage() {
           <div className="login-modal" style={{ maxWidth: 500 }}>
             <button className="modal-close" onClick={() => setUploadModal(false)}><HiX /></button>
             <div className="modal-header">
-              <div className="modal-logo">📷</div>
-              <h2 className="modal-title">Upload Photo</h2>
+              <div className="modal-logo">Gallery</div>
+              <h2 className="modal-title">Add a photo</h2>
             </div>
-            {error && <div className="modal-error"><span>⚠️</span> {error}</div>}
+            {error && <div className="modal-error"><span className="modal-error__mark">!</span> {error}</div>}
             <form className="modal-body" onSubmit={handleUpload}>
               {/* Drop zone */}
               <div className="gallery-dropzone" onClick={() => fileRef.current.click()}>

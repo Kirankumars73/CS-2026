@@ -1,14 +1,19 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   doc, getDoc, addDoc, collection,
   query, where, getDocs, serverTimestamp
 } from 'firebase/firestore';
-import { HiOutlineArrowLeft, HiOutlineMail, HiOutlinePencilAlt } from 'react-icons/hi';
+import {
+  HiOutlineArrowLeft, HiOutlineMail, HiOutlinePencil, HiOutlinePencilAlt, HiCheck, HiOutlineLink, HiOutlineSearch,
+} from 'react-icons/hi';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import YearbookMessageModal from '../components/YearbookMessageModal';
-import YearbookMessageInbox from '../components/YearbookMessageInbox';
+import LoginModal from '../components/LoginModal';
+import SlamBook from '../components/SlamBook';
+import Signatures from '../components/Signatures';
+import { portraitUrl } from '../utils/imageUtils';
 import './ProfilePage.css';
 
 const CLASS_ID = import.meta.env.VITE_CLASS_ID || 'cs2026';
@@ -22,16 +27,22 @@ export default function ProfilePage() {
 
   // Compose modal
   const [showModal, setShowModal] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
   const [sending, setSending] = useState(false);
   const [alreadySent, setAlreadySent] = useState(false);
   const [toast, setToast] = useState(null);
 
-  // Received messages (only loaded for own profile)
+  // Received signatures (only loaded for own profile)
   const [inbox, setInbox] = useState([]);
   const [inboxLoading, setInboxLoading] = useState(false);
 
   const isOwnProfile = currentUser?.uid === userId;
   const isOtherLoggedIn = currentUser && currentUser.uid !== userId;
+
+  /* ── Helpers ── */
+  const getInitials = (name) =>
+    (name || 'U').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  const firstName = (profile?.name || 'them').split(' ')[0];
 
   /* ── Load profile ── */
   useEffect(() => {
@@ -42,7 +53,7 @@ export default function ProfilePage() {
       .finally(() => setLoading(false));
   }, [userId]);
 
-  /* ── Check if current user already sent a message ── */
+  /* ── Check if current user already signed ── */
   useEffect(() => {
     if (!isOtherLoggedIn) return;
     const q = query(
@@ -53,7 +64,7 @@ export default function ProfilePage() {
     getDocs(q).then(snap => setAlreadySent(!snap.empty));
   }, [isOtherLoggedIn, currentUser?.uid, userId]);
 
-  /* ── Load inbox for own profile ── */
+  /* ── Load signatures for own profile ── */
   useEffect(() => {
     if (!isOwnProfile || !currentUser) return;
     setInboxLoading(true);
@@ -73,7 +84,7 @@ export default function ProfilePage() {
     }).finally(() => setInboxLoading(false));
   }, [isOwnProfile, currentUser?.uid, userId]);
 
-  /* ── Send message ── */
+  /* ── Sign their yearbook ── */
   const handleSend = async (text) => {
     if (!currentUser || !text.trim()) return;
     setSending(true);
@@ -96,10 +107,10 @@ export default function ProfilePage() {
       });
       setAlreadySent(true);
       setShowModal(false);
-      showToast('💌 Message sent! They\'ll treasure it forever.', 'success');
+      showToast(`Signed. ${firstName} will see it on their page.`, 'success');
     } catch (err) {
       console.error(err);
-      showToast('Failed to send. Try again.', 'error');
+      showToast('Could not sign right now. Please try again.', 'error');
     } finally {
       setSending(false);
     }
@@ -110,15 +121,20 @@ export default function ProfilePage() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  /* ── Helpers ── */
-  const getInitials = (name) =>
-    (name || 'U').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  const copyPageLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      showToast('Link copied. Share it with the class!', 'success');
+    } catch {
+      showToast('Could not copy the link.', 'error');
+    }
+  };
 
   /* ── Render ── */
   if (loading) {
     return (
-      <div className="page-wrapper" style={{ textAlign: 'center', paddingTop: 140 }}>
-        <div className="spinner" style={{ width: 48, height: 48, margin: '0 auto' }}></div>
+      <div className="page-wrapper" style={{ textAlign: 'center' }}>
+        <div className="spinner" style={{ width: 40, height: 40, margin: '40px auto' }}></div>
       </div>
     );
   }
@@ -127,111 +143,118 @@ export default function ProfilePage() {
     return (
       <div className="page-wrapper">
         <div className="empty-state">
-          <div className="empty-state-icon">🔍</div>
-          <h3>Profile not found</h3>
-          <p>This member hasn't set up their profile yet.</p>
+          <div className="empty-state-icon"><HiOutlineSearch /></div>
+          <h3>Page not found</h3>
+          <p>This classmate hasn’t set up their yearbook page yet.</p>
           <button className="btn btn-glass" onClick={() => navigate('/yearbook')} style={{ marginTop: 16 }}>
-            Back to Yearbook
+            Back to the class
           </button>
         </div>
       </div>
     );
   }
 
+  const photo = profile.profilePhotoImageKit || profile.profilePhoto;
+  const hasSlambook = Object.values(profile.slambook || {}).some(v => v?.trim());
+
   return (
     <div className="page-wrapper profile-page">
-      <button className="profile__back btn btn-glass btn-sm" onClick={() => navigate(-1)}>
+      <button className="profile__back" onClick={() => navigate(-1)}>
         <HiOutlineArrowLeft /> Back
       </button>
 
-      <div className="profile__card liquid-glass">
-        {/* Cover area */}
-        <div className="profile__cover">
-          <div className="profile__cover-bg"></div>
-          <div className="profile__avatar-wrap">
-            {(profile.profilePhotoImageKit || profile.profilePhoto) ? (
-              <img src={profile.profilePhotoImageKit || profile.profilePhoto} alt={profile.name} className="profile__avatar" />
-            ) : (
-              <div className="profile__avatar avatar-placeholder">
-                {getInitials(profile.name)}
-              </div>
-            )}
-          </div>
+      <article className="profile">
+        <div className="profile__portrait">
+          {photo ? (
+            <img src={portraitUrl(photo)} alt={profile.name} />
+          ) : (
+            <div className="profile__initials">{getInitials(profile.name)}</div>
+          )}
         </div>
 
-        {/* Info */}
-        <div className="profile__body">
-          <div className="profile__name-row">
-            <h1 className="profile__name">{profile.name || 'Unnamed'}</h1>
-            {isOwnProfile && (
-              <button className="btn btn-glass btn-sm" onClick={() => navigate('/edit-profile')}>
-                <HiOutlinePencilAlt /> Edit
+        <div className="profile__main">
+          <p className="section-label">
+            Class of 2026{profile.rollNumber ? ` · No. ${profile.rollNumber}` : ''}
+          </p>
+          <h1 className="profile__name">{profile.name || 'Unnamed'}</h1>
+
+          {profile.quote && <blockquote className="profile__quote">“{profile.quote}”</blockquote>}
+          {profile.bio && <p className="profile__bio">{profile.bio}</p>}
+
+          <div className="profile__actions">
+            {isOwnProfile ? (
+              <>
+                <Link to="/edit-profile" className="btn btn-primary">
+                  <HiOutlinePencilAlt /> Edit my page
+                </Link>
+                <button className="btn btn-glass" onClick={copyPageLink}>
+                  <HiOutlineLink /> Copy my page link
+                </button>
+              </>
+            ) : isOtherLoggedIn ? (
+              <>
+                {alreadySent ? (
+                  <span className="profile__signed"><HiCheck /> You signed {firstName}’s yearbook</span>
+                ) : (
+                  <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+                    <HiOutlinePencil /> Sign {firstName}’s yearbook
+                  </button>
+                )}
+                {profile.email && (
+                  <a href={`mailto:${profile.email}`} className="btn btn-glass">
+                    <HiOutlineMail /> Email
+                  </a>
+                )}
+              </>
+            ) : (
+              <button className="btn btn-primary" onClick={() => setShowLogin(true)}>
+                <HiOutlinePencil /> Log in to sign {firstName}’s yearbook
               </button>
             )}
           </div>
-
-          <div className="profile__meta">
-            {profile.rollNumber && (
-              <span className="badge badge-gold">📋 Roll #{profile.rollNumber}</span>
-            )}
-          </div>
-
-          {profile.quote && (
-            <blockquote className="profile__quote">
-              "{profile.quote}"
-            </blockquote>
-          )}
-
-          {profile.bio && (
-            <div className="profile__section">
-              <h2 className="profile__section-title">About</h2>
-              <p className="profile__bio">{profile.bio}</p>
-            </div>
-          )}
-
-          {/* ── Actions: send message / email ── */}
-          {isOtherLoggedIn && (
-            <div className="profile__actions">
-              {alreadySent ? (
-                <div className="profile__msg-sent">
-                  <span>💌</span>
-                  <span>You've already left a message here</span>
-                </div>
-              ) : (
-                <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-                  ✉️ Leave a Yearbook Message
-                </button>
-              )}
-              {profile.email && (
-                <a href={`mailto:${profile.email}`} className="btn btn-glass">
-                  <HiOutlineMail /> Email
-                </a>
-              )}
-            </div>
-          )}
-
-          {/* ── Inbox: only shown to the profile owner ── */}
-          {isOwnProfile && (
-            <div className="profile__section">
-              <div className="divider" />
-              {inboxLoading ? (
-                <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                  <div className="spinner" style={{ margin: '0 auto', width: 24, height: 24 }} />
-                </div>
-              ) : inbox.length === 0 ? (
-                <div className="profile__inbox-empty">
-                  <span>📭</span>
-                  <p>No messages yet. Your classmates will leave their wishes here.</p>
-                </div>
-              ) : (
-                <YearbookMessageInbox messages={inbox} />
-              )}
-            </div>
-          )}
         </div>
-      </div>
+      </article>
 
-      {/* Compose Modal */}
+      {/* ── Slam book ── */}
+      <section className="profile__section">
+        <div className="profile__section-head">
+          <h2 className="profile__section-title">Slam book</h2>
+        </div>
+        {hasSlambook ? (
+          <SlamBook answers={profile.slambook} />
+        ) : isOwnProfile ? (
+          <div className="profile__empty">
+            <p>Your slam book is empty. Five quick questions, and the class gets to know the real you.</p>
+            <Link to="/edit-profile#slambook" className="btn btn-glass btn-sm">Fill my slam book</Link>
+          </div>
+        ) : (
+          <p className="profile__empty-line">{firstName} hasn’t filled in their slam book yet.</p>
+        )}
+      </section>
+
+      {/* ── Signatures: only shown to the page owner ── */}
+      {isOwnProfile && (
+        <section className="profile__section">
+          <div className="profile__section-head">
+            <h2 className="profile__section-title">Signed by the class</h2>
+            {inbox.length > 0 && <span className="profile__count">{inbox.length}</span>}
+            <span className="profile__private">Only you can see these</span>
+          </div>
+          {inboxLoading ? (
+            <div className="spinner" style={{ margin: '24px auto', display: 'block' }} />
+          ) : inbox.length === 0 ? (
+            <div className="profile__empty">
+              <p>Nobody has signed your yearbook yet. Share your page so classmates can find it.</p>
+              <button className="btn btn-glass btn-sm" onClick={copyPageLink}>
+                <HiOutlineLink /> Copy my page link
+              </button>
+            </div>
+          ) : (
+            <Signatures messages={inbox} />
+          )}
+        </section>
+      )}
+
       {showModal && (
         <YearbookMessageModal
           recipientName={profile.name || 'this person'}
@@ -241,7 +264,8 @@ export default function ProfilePage() {
         />
       )}
 
-      {/* Toast */}
+      {showLogin && <LoginModal stayOnPage onClose={() => setShowLogin(false)} />}
+
       {toast && (
         <div className={`toast toast-${toast.type}`}>
           {toast.msg}

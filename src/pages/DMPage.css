@@ -6,7 +6,7 @@
   display: flex;
   height: 100vh;
   height: 100dvh;
-  padding-top: 68px;
+  padding-top: var(--nav-height);
   overflow: hidden;
 }
 
@@ -17,9 +17,7 @@
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--glass-border);
-  background: rgba(10, 10, 15, 0.6);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: var(--surface);
 }
 
 .dm-sidebar__header {
@@ -31,8 +29,10 @@
 }
 .dm-sidebar__header h2 {
   font-family: var(--font-display);
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
 }
 .dm-sidebar__icon {
   font-size: 1.5rem;
@@ -96,12 +96,12 @@
   color: var(--text-primary);
 }
 .dm-contact:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: var(--glass-border);
+  background: var(--paper);
+  border-color: var(--rule);
 }
 .dm-contact--active {
-  background: rgba(212, 168, 67, 0.1) !important;
-  border-color: rgba(212, 168, 67, 0.25) !important;
+  background: #E9EDF5 !important;
+  border-color: #CBD3E3 !important;
 }
 
 .dm-contact__avatar {
@@ -153,10 +153,8 @@
   align-items: center;
   gap: 12px;
   padding: 14px 20px;
-  background: rgba(10, 10, 15, 0.8);
+  background: var(--surface);
   border-bottom: 1px solid var(--glass-border);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   flex-shrink: 0;
 }
 .dm-chatview__back {
@@ -198,13 +196,15 @@
 
 .dm-chatview__empty {
   text-align: center;
-  color: var(--text-muted);
+  color: var(--rule-strong);
   margin: auto;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 8px;
-  font-size: 2rem;
+  font-size: 2.2rem;
 }
+.dm-chatview__empty p { font-size: 0.9rem; color: var(--ink-3); }
 .dm-chatview__empty p { font-size: 0.9rem; }
 
 /* Input Bar */
@@ -212,10 +212,8 @@
   display: flex;
   gap: 12px;
   padding: 14px 24px;
-  background: rgba(10, 10, 15, 0.9);
+  background: var(--surface);
   border-top: 1px solid var(--glass-border);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   flex-shrink: 0;
 }
 .dm-chatview__input {
@@ -247,13 +245,17 @@
   padding: 40px;
 }
 .dm-chatview__placeholder-icon {
-  font-size: 4rem;
-  opacity: 0.35;
+  font-size: 3.2rem;
+  color: var(--rule-strong);
+  display: flex;
+  justify-content: center;
 }
 .dm-chatview__placeholder h3 {
   font-family: var(--font-display);
-  font-size: 1.3rem;
-  color: var(--text-secondary);
+  font-size: 1.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--ink);
 }
 .dm-chatview__placeholder p {
   max-width: 280px;

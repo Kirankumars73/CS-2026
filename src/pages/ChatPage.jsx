@@ -66,8 +66,8 @@ export default function ChatPage() {
       <div className="chat__header">
         <HiOutlineChat className="chat__header-icon" />
         <div>
-          <h1 className="chat__header-title">CS 2026 Chat</h1>
-          <p className="chat__header-sub">Global class chat — say hello! 👋</p>
+          <h1 className="chat__header-title">Class chat</h1>
+          <p className="chat__header-sub">The whole class, one conversation</p>
         </div>
         <Link to="/dm" className="btn btn-glass btn-sm" style={{ marginLeft: 'auto' }}>
           <HiOutlineChatAlt2 /> DMs
@@ -78,7 +78,7 @@ export default function ChatPage() {
       <div className="chat__messages" id="chat-messages">
         {messages.length === 0 && (
           <div className="chat__empty">
-            <span>💬</span>
+            <HiOutlineChat />
             <p>No messages yet. Be the first to say hi!</p>
           </div>
         )}

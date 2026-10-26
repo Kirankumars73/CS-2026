@@ -1,0 +1,32 @@
+.slambook {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  border-top: 1px solid var(--rule);
+}
+.slambook__entry {
+  padding: 18px 24px 20px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.slambook__entry:nth-child(even) {
+  padding-left: 24px;
+  padding-right: 0;
+  border-left: 1px solid var(--rule);
+}
+.slambook__prompt {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.slambook__answer {
+  margin-top: 4px;
+  font-size: 1.65rem;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .slambook { grid-template-columns: 1fr; }
+  .slambook__entry,
+  .slambook__entry:nth-child(even) { padding: 16px 0; border-left: none; }
+}

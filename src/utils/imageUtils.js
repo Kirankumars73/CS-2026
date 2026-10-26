@@ -1,6 +1,26 @@
 import { uploadToImageKit } from '../imagekit';
 
 /**
+ * Small square thumbnail of a photo URL, where the host can resize on the fly
+ * (ImageKit and Google account photos). Other URLs (e.g. Firebase Storage) are returned as-is.
+ */
+export function thumbUrl(url, size) {
+  if (!url) return url;
+  if (url.includes('ik.imagekit.io')) {
+    return `${url}${url.includes('?') ? '&' : '?'}tr=w-${size},h-${size}`;
+  }
+  if (url.includes('googleusercontent.com')) {
+    return /=s\d+(-c)?$/.test(url) ? url.replace(/=s\d+(-c)?$/, `=s${size}-c`) : `${url}=s${size}-c`;
+  }
+  return url;
+}
+
+// Google account photos are stored at 96px; portraits show them much larger, so ask Google for a sharper copy
+export function portraitUrl(url) {
+  return url?.includes('googleusercontent.com') ? thumbUrl(url, 480) : url;
+}
+
+/**
  * Read the EXIF orientation tag from a JPEG file's raw bytes.
  * Returns a number 1–8 (1 = normal). Returns 1 if not found or non-JPEG.
  */

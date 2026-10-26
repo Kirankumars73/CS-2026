@@ -1,113 +1,100 @@
 .wall__actions {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  margin-bottom: 32px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 28px;
 }
 .wall__login-hint {
-  padding: 12px 18px;
-  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  gap: 12px;
   font-size: 0.88rem;
-  color: var(--text-secondary);
+  font-weight: 600;
+  color: var(--ink-2);
 }
-.wall__login-hint .btn { display: inline-flex; align-items: center; gap: 6px; }
+.wall__count {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
 
+.wall__textarea {
+  font-size: 1.5rem;
+  min-height: 170px;
+}
+.wall__textarea::placeholder { color: rgba(29, 78, 216, 0.4); }
+.wall__char-count {
+  font-size: 0.75rem;
+  color: var(--ink-3);
+  text-align: right;
+}
+
+/* Handwritten notes on plain white cards */
 .wall__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 18px;
 }
 
-/* Sticky Note */
-.sticky-note {
-  background: var(--note-color);
-  border-radius: 4px 4px 24px 4px;
-  padding: 20px 18px 16px;
-  min-height: 160px;
+.wall-note {
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  position: relative;
-  transform: rotate(var(--note-rotation));
-  transition: transform var(--transition-base), box-shadow var(--transition-base);
-  box-shadow: 4px 4px 12px rgba(0,0,0,0.3), 2px 2px 4px rgba(0,0,0,0.2);
-  cursor: default;
+  gap: 16px;
+  margin: 0;
+  min-height: 160px;
+  padding: 22px 22px 16px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
 }
-.sticky-note:hover {
-  transform: rotate(0deg) scale(1.04);
-  box-shadow: 8px 8px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,0,0,0.1);
-  z-index: 2;
+.wall-note__message {
+  font-size: 1.6rem;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
 }
-/* Pin */
-.sticky-note::before {
-  content: '';
-  position: absolute;
-  top: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 14px;
-  height: 14px;
-  background: rgba(0,0,0,0.3);
-  border-radius: 50%;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.3);
-}
-
-.sticky-note__message {
-  font-size: 0.9rem;
-  color: rgba(0,0,0,0.8);
-  line-height: 1.6;
-  font-weight: 500;
-  flex: 1;
-  word-break: break-word;
-}
-
-.sticky-note__footer {
+.wall-note__footer {
   display: flex;
-  align-items: flex-end;
+  align-items: baseline;
   justify-content: space-between;
-  gap: 8px;
-  margin-top: 12px;
-  border-top: 1px solid rgba(0,0,0,0.1);
-  padding-top: 8px;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--rule-strong);
 }
-.sticky-note__author {
-  font-size: 0.78rem;
+.wall-note__author {
+  font-size: 0.82rem;
   font-weight: 700;
-  color: rgba(0,0,0,0.6);
-  font-style: italic;
+  color: var(--ink);
 }
-.sticky-note__date {
-  font-size: 0.72rem;
-  color: rgba(0,0,0,0.4);
+.wall-note__date {
+  font-size: 0.74rem;
+  color: var(--ink-3);
+  white-space: nowrap;
 }
 
-.sticky-note__delete {
+.wall-note__delete {
   position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 22px;
-  height: 22px;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  background: rgba(0,0,0,0.15);
-  color: rgba(0,0,0,0.5);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
-  cursor: pointer;
-  border: none;
+  color: var(--ink-3);
+  font-size: 0.85rem;
   opacity: 0;
-  transition: all var(--transition-fast);
+  transition: opacity var(--transition-fast), color var(--transition-fast), background var(--transition-fast);
 }
-.sticky-note:hover .sticky-note__delete { opacity: 1; }
-.sticky-note__delete:hover {
-  background: rgba(232, 98, 124, 0.6);
-  color: white;
-}
+.wall-note:hover .wall-note__delete,
+.wall-note__delete:focus-visible { opacity: 1; }
+.wall-note__delete:hover { color: var(--danger); background: #FBEFF1; }
 
-@media (max-width: 768px) {
-  .wall__grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
-}
-@media (max-width: 400px) {
-  .wall__grid { grid-template-columns: 1fr 1fr; }
+@media (hover: none) {
+  .wall-note__delete { opacity: 1; }
 }
