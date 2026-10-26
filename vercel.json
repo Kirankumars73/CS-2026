@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/__/(.*)", "destination": "https://year-book-133e2.firebaseapp.com/__/$1" },
     { "source": "/(.*)", "destination": "/" }
   ]
 }

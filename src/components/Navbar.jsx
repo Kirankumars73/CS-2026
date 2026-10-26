@@ -6,7 +6,7 @@ import LoginModal from './LoginModal';
 import './Navbar.css';
 
 export default function Navbar() {
-  const { currentUser, isAdmin, logout, memberProfile } = useAuth();
+  const { currentUser, isAdmin, logout, memberProfile, redirectSignIn, clearRedirectSignIn } = useAuth();
   const [showLogin, setShowLogin] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -147,7 +147,9 @@ export default function Navbar() {
         )}
       </nav>
 
-      {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
+      {(showLogin || redirectSignIn) && (
+        <LoginModal onClose={() => { setShowLogin(false); clearRedirectSignIn(); }} />
+      )}
     </>
   );
 }

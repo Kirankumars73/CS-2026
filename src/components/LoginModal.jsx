@@ -5,13 +5,24 @@ import { HiX, HiLockClosed, HiArrowRight } from 'react-icons/hi';
 import { useAuth } from '../contexts/AuthContext';
 import './LoginModal.css';
 
+function signInErrorMessage(err) {
+  if (err.code === 'auth/popup-closed-by-user') {
+    return 'Sign-in popup was closed. Please try again.';
+  }
+  if (err.code === 'auth/popup-blocked') {
+    return 'Your browser blocked the Google sign-in window. Allow pop-ups for this site, or open it in Chrome or Safari, and try again.';
+  }
+  return err.message || 'Google sign-in failed. Please try again.';
+}
+
 export default function LoginModal({ onClose }) {
-  const { loginWithGoogle, verifyAndJoin } = useAuth();
-  const [step, setStep] = useState(1); // 1 = google, 2 = secret code
+  const { loginWithGoogle, loginWithGoogleRedirect, verifyAndJoin, redirectSignIn } = useAuth();
+  // Back from a full-page Google sign-in: pick up at the secret code step
+  const [step, setStep] = useState(redirectSignIn?.user ? 2 : 1); // 1 = google, 2 = secret code
   const [secretCode, setSecretCode] = useState('');
-  const [tempUser, setTempUser] = useState(null);
+  const [tempUser, setTempUser] = useState(redirectSignIn?.user ?? null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(redirectSignIn?.error ? signInErrorMessage(redirectSignIn.error) : '');
   const navigate = useNavigate();
   const codeInputRef = useRef(null);
 
@@ -42,10 +53,15 @@ export default function LoginModal({ onClose }) {
       setTempUser(user);
       setStep(2);
     } catch (err) {
-      if (err.code === 'auth/popup-closed-by-user') {
-        setError('Sign-in popup was closed. Please try again.');
+      if (err.code === 'auth/popup-blocked') {
+        // Popup blocked (e.g. Firefox): continue sign-in in this tab instead
+        try {
+          await loginWithGoogleRedirect();
+        } catch {
+          setError(signInErrorMessage(err));
+        }
       } else {
-        setError(err.message || 'Google sign-in failed. Please try again.');
+        setError(signInErrorMessage(err));
       }
     } finally {
       setLoading(false);

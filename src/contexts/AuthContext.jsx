@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
+import { getRedirectResult, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../firebase';
 
@@ -12,6 +12,8 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [memberProfile, setMemberProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  // Full-page Google sign-in that came back still needing the secret code: { user } or { error }
+  const [redirectSignIn, setRedirectSignIn] = useState(null);
 
   const isAdmin = currentUser?.email === ADMIN_EMAIL;
 
@@ -46,11 +48,28 @@ export function AuthProvider({ children }) {
     return unsub;
   }, []);
 
+  // Back from a full-page Google sign-in: members are simply signed in,
+  // anyone else still has to enter the secret code
+  useEffect(() => {
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result && !(await loadMemberProfile(result.user.uid))) {
+          setRedirectSignIn({ user: result.user });
+        }
+      })
+      .catch((error) => setRedirectSignIn({ error }));
+  }, []);
+
   // Step 1: Sign in with Google popup. Existing members skip the secret code.
   async function loginWithGoogle() {
     const result = await signInWithPopup(auth, googleProvider);
     const profile = await loadMemberProfile(result.user.uid);
     return { user: result.user, isMember: !!profile };
+  }
+
+  // Step 1 fallback when the popup is blocked: sign in in this tab (picked up by getRedirectResult)
+  function loginWithGoogleRedirect() {
+    return signInWithRedirect(auth, googleProvider);
   }
 
   // Step 2: Verify secret code and create/update member doc
@@ -106,6 +125,9 @@ export function AuthProvider({ children }) {
     loading,
     isAdmin,
     loginWithGoogle,
+    loginWithGoogleRedirect,
+    redirectSignIn,
+    clearRedirectSignIn: () => setRedirectSignIn(null),
     verifyAndJoin,
     logout,
     refreshProfile,
