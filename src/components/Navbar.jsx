@@ -4,6 +4,7 @@ import { HiOutlineLogout, HiMenu, HiX } from 'react-icons/hi';
 import { useAuth } from '../contexts/AuthContext';
 import LoginModal from './LoginModal';
 import ThemeToggle from './ThemeToggle';
+import { currentTheme, applyTheme } from '../utils/theme';
 import './Navbar.css';
 
 export default function Navbar() {
@@ -11,6 +12,7 @@ export default function Navbar() {
   const [showLogin, setShowLogin] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(() => window.scrollY > 20);
+  const [theme, setTheme] = useState(currentTheme);
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
@@ -19,6 +21,12 @@ export default function Navbar() {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+    setTheme(next);
+  };
 
   const handleLogout = async () => {
     setMenuOpen(false);
@@ -65,13 +73,13 @@ export default function Navbar() {
           </ul>
 
           <div className="navbar__actions">
-            <ThemeToggle className="navbar__icon-btn" />
+            <ThemeToggle theme={theme} onToggle={toggleTheme} className="navbar__icon-btn navbar__theme" label />
             {currentUser ? (
               <>
                 {isAdmin && (
                   <NavLink
                     to="/admin"
-                    className={({ isActive }) => `navbar__admin-link ${isActive ? 'active' : ''}`}
+                    className={({ isActive }) => `navbar__admin-link navbar__wide-only ${isActive ? 'active' : ''}`}
                   >
                     Admin
                   </NavLink>
@@ -83,7 +91,7 @@ export default function Navbar() {
                     <div className="navbar__avatar-placeholder">{initials}</div>
                   )}
                 </Link>
-                <button className="navbar__icon-btn" onClick={handleLogout} title="Log out" aria-label="Log out">
+                <button className="navbar__icon-btn navbar__wide-only" onClick={handleLogout} title="Log out" aria-label="Log out">
                   <HiOutlineLogout />
                 </button>
               </>
@@ -110,6 +118,7 @@ export default function Navbar() {
 
         {menuOpen && (
           <div className="navbar__mobile-menu">
+            <ThemeToggle theme={theme} onToggle={toggleTheme} className="navbar__mobile-link navbar__mobile-theme" label />
             {navLinks.map(link => (
               <NavLink
                 key={link.to}

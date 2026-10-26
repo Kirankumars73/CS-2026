@@ -1,20 +1,13 @@
-import { useState } from 'react';
 import { HiOutlineMoon, HiOutlineSun } from 'react-icons/hi';
-import { currentTheme, applyTheme } from '../utils/theme';
 
-export default function ThemeToggle({ className = '' }) {
-  const [theme, setTheme] = useState(currentTheme);
-
-  const toggle = () => {
-    const next = theme === 'dark' ? 'light' : 'dark';
-    applyTheme(next);
-    setTheme(next);
-  };
-
-  const label = theme === 'dark' ? 'Switch to light theme' : 'Switch to black theme';
+// Controlled by the Navbar, so the bar button and the mobile-menu item always agree
+export default function ThemeToggle({ theme, onToggle, className = '', label = false }) {
+  const isDark = theme === 'dark';
+  const text = isDark ? 'Light theme' : 'Black theme';
   return (
-    <button className={className} onClick={toggle} title={label} aria-label={label}>
-      {theme === 'dark' ? <HiOutlineSun /> : <HiOutlineMoon />}
+    <button className={className} onClick={onToggle} title={`Switch to ${text.toLowerCase()}`} aria-label={`Switch to ${text.toLowerCase()}`}>
+      {isDark ? <HiOutlineSun /> : <HiOutlineMoon />}
+      {label && <span className="theme-toggle__label">{text}</span>}
     </button>
   );
 }
