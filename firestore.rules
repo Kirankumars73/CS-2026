@@ -86,8 +86,12 @@ service cloud.firestore {
     }
 
     match /yearbook_messages/{msgId} {
-      allow read: if isAuth() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId);
-      allow create: if isAuth() && request.auth.uid == request.resource.data.senderId && request.resource.data.senderId != request.resource.data.receiverId && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 500;
+      allow read: if isAuth()
+        && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId);
+      allow create: if isAuth()
+        && request.auth.uid == request.resource.data.senderId
+        && request.resource.data.senderId != request.resource.data.receiverId
+        && validText(request.resource.data);
       allow update, delete: if false;
     }
     match /{document=**} { allow read, write: if false; }
