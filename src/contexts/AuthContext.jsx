@@ -67,8 +67,13 @@ export function AuthProvider({ children }) {
     return { user: result.user, isMember: !!profile };
   }
 
-  // Step 1 fallback when the popup is blocked: sign in in this tab (picked up by getRedirectResult)
-  function loginWithGoogleRedirect() {
+  // Step 1 fallback when the popup is blocked: sign in in this tab (picked up by getRedirectResult).
+  // Only works once authDomain is this site (auth pages proxied in vercel.json); otherwise Firefox
+  // and Safari strand the user on Firebase's "missing initial state" page.
+  async function loginWithGoogleRedirect() {
+    if (auth.config.authDomain !== window.location.host) {
+      throw new Error('Redirect sign-in needs authDomain set to this site');
+    }
     return signInWithRedirect(auth, googleProvider);
   }
 
